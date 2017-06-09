@@ -1,0 +1,17 @@
+{
+  "name": "quasihtml",
+  "version": "0.0.1",
+  "description": "HTML template tag compiler",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zenparsing/quasihtml.git"
+  },
+  "keywords": [
+    "template",
+    "template tag"
+    "template string",
+    "html tag"
+  ],
+  "homepage": "https://github.com/zenparsing/quasihtml"
+}
