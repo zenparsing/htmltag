@@ -9,9 +9,13 @@
   },
   "keywords": [
     "template",
-    "template tag"
+    "template tag",
     "template string",
     "html tag"
   ],
-  "homepage": "https://github.com/zenparsing/quasihtml"
+  "homepage": "https://github.com/zenparsing/quasihtml",
+  "devDependencies": {
+    "react": "^15.5.4",
+    "react-dom": "^15.5.4"
+  }
 }

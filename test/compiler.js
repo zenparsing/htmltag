@@ -17,18 +17,47 @@ const html = createCompiler({
   });
 }
 
-{ // Replaced tag names
-  let custom = 'replaced-type';
+{ // Dynamic tag names
+  let custom = 'dynamic-type';
   assert.deepEqual(html`
     <${ custom } id='c'>
       <div></div>
     </${ custom }>
   `, {
-    type: 'replaced-type',
+    type: 'dynamic-type',
     props: { id: 'c' },
     children: [
       '\n      ',
       { type: 'div', props: {}, children: [] },
+      '\n    ',
+    ],
+  });
+}
+
+{ // Closing tag doesn't require a name
+  assert.deepEqual(html`
+    <div>
+      <${'dynamic'}>
+        <span></span>
+      </>
+      <span></span>
+    </div>
+  `, {
+    type: 'div',
+    props: {},
+    children: [
+      '\n      ',
+      {
+        type: 'dynamic',
+        props: {},
+        children: [
+          '\n        ',
+          { type: 'span', props: {}, children: [] },
+          '\n      ',
+        ],
+      },
+      '\n      ',
+      { type: 'span', props: {}, children: [] },
       '\n    ',
     ],
   });
