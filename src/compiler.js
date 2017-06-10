@@ -46,7 +46,8 @@ function compile(parts, framework) {
   function pop() {
     if (stack.length > 1) {
       let node = stack.pop();
-      let element = framework.createElement(node.type, node.props, node.children);
+      let args = [node.type, node.props].concat(node.children);
+      let element = framework.createElement.apply(framework, args);
       stack[stack.length - 1].children.push(element);
       hasElement = true;
     }

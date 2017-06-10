@@ -10,7 +10,7 @@ function register(props) {
 }
 
 const html = qhtml({
-  createElement(type, props, children) {
+  createElement(type, props, ...children) {
     return { type: registry.get(type) || type, props, children };
   },
 });

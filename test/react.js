@@ -5,13 +5,7 @@ const ReactDOM = require('react-dom/server');
 const qhtml = require('../src');
 const assert = require('assert');
 
-// TODO: We should be able to just do qhtml(React)
-const html = qhtml({
-  createElement(type, props, children) {
-    return React.createElement(type, props, ...children);
-  },
-});
-
+const html = qhtml(React);
 const render = ReactDOM.renderToStaticMarkup;
 
 function trim(out) {

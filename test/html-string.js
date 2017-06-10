@@ -15,6 +15,10 @@ const html = qhtml();
   assert.equal(html`
     <div>${ 'a < b' }</div>
   `, '<div>a &lt; b</div>');
+
+  assert.equal(html`
+    <div>${ '<i>a</i>' }</div>
+  `, '<div>&lt;i&gt;a&lt;/i&gt;</div>');
 }
 
 { // Array children

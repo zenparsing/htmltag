@@ -17,7 +17,7 @@ function esc(s) {
 function convert(x) {
   if (Array.isArray(x)) {
     return x.map(convert).join('');
-  } else if (typeof x === 'string' && x[0] === '<') {
+  } else if (x && typeof x.__html === 'string') {
     return x;
   } else {
     return esc(x);
@@ -26,11 +26,15 @@ function convert(x) {
 
 function htmlStringOptions() {
   return {
-    createElement(tag, props, children) {
+    createElement(tag, props, ...children) {
       let pairs = Object.keys(props).map(k => `${ esc(k) }="${ esc(props[k]) }"`);
       let attributes = pairs.length > 0 ? ' ' + pairs.join(' ') : '';
       let inner = children.map(convert).join('');
-      return `<${ tag }${ attributes }>${ inner }</${ tag }>`;
+      let html = `<${ tag }${ attributes }>${ inner }</${ tag }>`;
+      return {
+        __html: `<${ tag }${ attributes }>${ inner }</${ tag }>`,
+        toString() { return this.__html; },
+      };
     },
   };
 }
