@@ -58,7 +58,7 @@ const html = createCompiler({
   });
 }
 
-{ // Error if no elements and no root type
+{ // Error if no elements
   assert.throws(() => {
     html`
       text only
@@ -66,7 +66,7 @@ const html = createCompiler({
   });
 }
 
-{ // Error if multiple root elements and no root type
+{ // Error if multiple root elements
   assert.throws(() => {
     html`
       <div></div>

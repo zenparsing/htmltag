@@ -26,7 +26,6 @@ function convert(x) {
 
 function htmlStringOptions() {
   return {
-    rootType: 'div',
     createElement(tag, props, children) {
       let pairs = Object.keys(props).map(k => `${ esc(k) }="${ esc(props[k]) }"`);
       let attributes = pairs.length > 0 ? ' ' + pairs.join(' ') : '';

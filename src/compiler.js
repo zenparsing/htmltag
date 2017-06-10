@@ -33,6 +33,7 @@ function compile(parts, framework) {
   let hasElement = false;
   let stack = [root];
   let index = 0;
+  let type;
 
   function peek() {
     return index < parts.length ? parts[index][0] : '';
@@ -51,13 +52,8 @@ function compile(parts, framework) {
     }
   }
 
-  while (true) {
+  while ((type = peek())) {
     let node = stack[stack.length - 1];
-    let type = peek();
-
-    if (!type) {
-      break;
-    }
 
     if (type === 'tag-start') {
       let value = read();
@@ -101,17 +97,10 @@ function compile(parts, framework) {
   }
 
   let children = trimWhitespaceNodes(root.children);
-  let element;
-
-  if (children.length === 1 && hasElement) {
-    element = children[0];
-  } else if (framework.rootType) {
-    element = framework.createElement(framework.rootType, {}, children);
-  } else {
+  if (!hasElement || children.length !== 1) {
     throw new Error('HTML template must have exactly one root element');
   }
-
-  return element;
+  return children[0];
 }
 
 module.exports = createCompiler;
