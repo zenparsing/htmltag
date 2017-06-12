@@ -10,7 +10,6 @@ module.exports = {
     "no-console": ["error", { "allow": ["warn", "error"] }],
     "camelcase": ["error", { "properties": "always" }],
     "brace-style": ["error", "1tbs", { "allowSingleLine": true }],
-    "comma-dangle": ["off"],
     "eqeqeq": ["error", "smart"],
     "indent": ["error", 2, { "SwitchCase": 1 }],
     "no-throw-literal": ["error"],

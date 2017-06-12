@@ -1,6 +1,6 @@
 {
   "name": "quasi-html",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "HTML template tag compiler",
   "license": "MIT",
   "repository": {
@@ -13,5 +13,12 @@
     "template string",
     "html"
   ],
-  "homepage": "https://github.com/zenparsing/quasi-html"
+  "homepage": "https://github.com/zenparsing/quasi-html",
+  "devDependencies": {
+    "esdown": "^1.1.17"
+  },
+  "scripts": {
+    "prepublishOnly": "npm build",
+    "build": "esdown - src/index.js dist/index.js -b"
+  }
 }
