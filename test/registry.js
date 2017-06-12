@@ -1,6 +1,6 @@
 'use strict';
 
-const qhtml = require('../src');
+const quasiHTML = require('../src');
 const assert = require('assert');
 
 const registry = new Map();
@@ -9,10 +9,8 @@ function register(props) {
   Object.keys(props).forEach(key => registry.set(key, props[key]));
 }
 
-const html = qhtml({
-  createElement(type, props, ...children) {
-    return { type: registry.get(type) || type, props, children };
-  },
+const html = quasiHTML((type, props, children) => {
+  return { type: registry.get(type) || type, props, children };
 });
 
 {

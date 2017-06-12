@@ -2,9 +2,8 @@
 
 const Scanner = require('./scanner');
 const selfClosing = require('./self-closing');
-const htmlStringOptions = require('./html-string');
 
-function createCompiler(options = htmlStringOptions()) {
+function createCompiler(createElement) {
   return function htmlCompiler(literals, ...values) {
     let scanner = new Scanner();
     for (let i = 0; i < literals.length; i++) {
@@ -13,7 +12,7 @@ function createCompiler(options = htmlStringOptions()) {
         scanner.pushValue(values[i]);
       }
     }
-    return compile(scanner.tokens, options);
+    return compile(scanner.tokens, createElement);
   };
 }
 
@@ -28,7 +27,7 @@ function trimWhitespaceNodes(nodes) {
   return a === b ? nodes : nodes.slice(a, b);
 }
 
-function compile(parts, framework) {
+function compile(parts, createElement) {
   let root = { type: null, props: {}, children: [] };
   let hasElement = false;
   let stack = [root];
@@ -46,8 +45,7 @@ function compile(parts, framework) {
   function pop() {
     if (stack.length > 1) {
       let node = stack.pop();
-      let args = [node.type, node.props].concat(node.children);
-      let element = framework.createElement.apply(framework, args);
+      let element = createElement(node.type, node.props, node.children);
       stack[stack.length - 1].children.push(element);
       hasElement = true;
     }

@@ -1,21 +1,17 @@
 {
-  "name": "quasihtml",
+  "name": "quasi-html",
   "version": "0.0.1",
   "description": "HTML template tag compiler",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zenparsing/quasihtml.git"
+    "url": "https://github.com/zenparsing/quasi-html.git"
   },
   "keywords": [
     "template",
     "template tag",
     "template string",
-    "html tag"
+    "html"
   ],
-  "homepage": "https://github.com/zenparsing/quasihtml",
-  "devDependencies": {
-    "react": "^15.5.4",
-    "react-dom": "^15.5.4"
-  }
+  "homepage": "https://github.com/zenparsing/quasi-html"
 }

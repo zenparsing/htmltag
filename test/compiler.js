@@ -3,8 +3,8 @@
 const createCompiler = require('../src/compiler');
 const assert = require('assert');
 
-const html = createCompiler({
-  createElement(type, props, ...children) { return { type, props, children }; },
+const html = createCompiler((type, props, children) => {
+  return { type, props, children };
 });
 
 { // Attributes
