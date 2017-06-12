@@ -73,7 +73,7 @@ function readChunk(chunk, tokens, state = TEXT) {
       } else if (attributeChar(c)) {
         move(ATTR_KEY, b);
       } else if (!whitespaceChar(c)) {
-        move(ATTR);
+        move(ATTR, b);
       }
     } else if (state === ATTR_VALUE_WS) {
       if (c === '"') {

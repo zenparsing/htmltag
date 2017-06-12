@@ -44,3 +44,13 @@ const assert = require('assert');
   scanner.readChunk('-->');
   assert.deepEqual(scanner.tokens, []);
 }
+
+{ // Attribute key WS before />
+  let scanner = new Scanner();
+  scanner.readChunk('<x a />');
+  assert.deepEqual(scanner.tokens, [
+    ['tag-start', 'x'],
+    ['attr-key', 'a'],
+    ['tag-end', '/'],
+  ]);
+}
