@@ -73,16 +73,22 @@ function compile(parts, createElement) {
         });
       } else {
         let propKey = value;
-        let propVal = '';
+        let propValue = '';
+        let hasValue = false;
         while (peek() === 'attr-value') {
           value = read();
-          propVal = propVal ? String(propVal) + value : value;
+          propValue = hasValue ? String(propValue) + value : value;
+          hasValue = true;
         }
-        type = peek();
-        if (propKey && !propVal && (type === 'tag-end' || type === 'attr-key')) {
-          propVal = propKey.toLowerCase();
+        if (!hasValue) {
+          type = peek();
+          if (type === 'tag-end' || type === 'attr-key') {
+            propValue = true;
+          }
         }
-        node.props[propKey] = propVal;
+        if (propKey) {
+          node.props[propKey] = propValue;
+        }
       }
     } else if (type === 'tag-end') {
       if (read() === '/' || selfClosing(node.type)) {

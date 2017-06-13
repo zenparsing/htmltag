@@ -103,3 +103,27 @@ const html = createCompiler((type, props, children) => {
     `;
   });
 }
+
+{ // Flag attributes
+  assert.deepEqual(html`
+    <x f1 x=1 f2 />
+  `, {
+    type: 'x',
+    props: {
+      f1: true,
+      x: 1,
+      f2: true,
+    },
+    children: [],
+  });
+}
+
+{ // Null attribute keys
+  assert.deepEqual(html`
+    <x ${ null } a=1 />
+  `, {
+    type: 'x',
+    props: { a: '1' },
+    children: [],
+  });
+}
