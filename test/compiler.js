@@ -118,6 +118,16 @@ const html = createCompiler((type, props, children) => {
   });
 }
 
+{ // Boolean false attribute values
+  assert.deepEqual(html`
+    <x a=${ false } />
+  `, {
+    type: 'x',
+    props: { a: false },
+    children: [],
+  });
+}
+
 { // Null attribute keys
   assert.deepEqual(html`
     <x ${ null } a=1 />
