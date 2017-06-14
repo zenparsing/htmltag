@@ -1,11 +1,11 @@
 {
-  "name": "quasi-html",
+  "name": "htmltag",
   "version": "0.1.3",
   "description": "HTML template tag compiler",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zenparsing/quasi-html.git"
+    "url": "https://github.com/zenparsing/htmltag.git"
   },
   "keywords": [
     "template",
@@ -13,7 +13,7 @@
     "template string",
     "html"
   ],
-  "homepage": "https://github.com/zenparsing/quasi-html",
+  "homepage": "https://github.com/zenparsing/htmltag",
   "devDependencies": {
     "esdown": "^1.1.17"
   },
