@@ -86,9 +86,7 @@ function compile(parts, createElement) {
             propValue = true;
           }
         }
-        if (propKey === 'using') {
-          node.type = propValue || node.type;
-        } else if (propKey) {
+        if (propKey) {
           node.props[propKey] = propValue;
         }
       }

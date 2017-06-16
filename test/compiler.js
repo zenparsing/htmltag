@@ -137,21 +137,3 @@ const html = createCompiler((type, props, children) => {
     children: [],
   });
 }
-
-{ // Using special attribute
-  assert.deepEqual(html`
-    <x using=${ 'y' } />
-  `, {
-    type: 'y',
-    props: {},
-    children: [],
-  });
-
-  assert.deepEqual(html`
-    <x ${{ using: '-' }} />
-  `, {
-    type: 'x',
-    props: { using: '-' },
-    children: [],
-  });
-}
