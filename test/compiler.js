@@ -137,3 +137,29 @@ const html = createCompiler((type, props, children) => {
     children: [],
   });
 }
+
+{ // createFragment
+  let html = createCompiler((type, props, children) => {
+    return { type, props, children };
+  }, {
+    createFragment(children) {
+      return { type: '#fragment', props: {}, children };
+    },
+  });
+
+  assert.deepEqual(html`
+    <li>One</li>
+    <li>Two</li>
+    <li>Three</li>
+  `, {
+    type: '#fragment',
+    props: {},
+    children: [
+      { type: 'li', props: {}, children: ['One'] },
+      '\n    ',
+      { type: 'li', props: {}, children: ['Two'] },
+      '\n    ',
+      { type: 'li', props: {}, children: ['Three'] },
+    ],
+  });
+}

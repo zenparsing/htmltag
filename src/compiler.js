@@ -3,7 +3,7 @@
 const Scanner = require('./scanner');
 const selfClosing = require('./self-closing');
 
-function createCompiler(createElement) {
+function createCompiler(createElement, options = {}) {
   return function htmlCompiler(literals, ...values) {
     let scanner = new Scanner();
     for (let i = 0; i < literals.length; i++) {
@@ -12,7 +12,7 @@ function createCompiler(createElement) {
         scanner.pushValue(values[i]);
       }
     }
-    return compile(scanner.tokens, createElement);
+    return compile(scanner.tokens, createElement, options);
   };
 }
 
@@ -27,7 +27,7 @@ function trimWhitespaceNodes(nodes) {
   return a === b ? nodes : nodes.slice(a, b);
 }
 
-function compile(parts, createElement) {
+function compile(parts, createElement, options) {
   let root = { type: null, props: {}, children: [] };
   let hasElement = false;
   let stack = [root];
@@ -102,10 +102,13 @@ function compile(parts, createElement) {
   }
 
   let children = trimWhitespaceNodes(root.children);
-  if (!hasElement || children.length !== 1) {
-    throw new Error('HTML template must have exactly one root element');
+  if (hasElement && children.length === 1) {
+    return children[0];
   }
-  return children[0];
+  if (options.createFragment) {
+    return options.createFragment(children);
+  }
+  throw new Error('HTML template must have exactly one root element');
 }
 
 module.exports = createCompiler;

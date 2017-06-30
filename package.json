@@ -1,6 +1,6 @@
 {
   "name": "htmltag",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "HTML template tag compiler",
   "license": "MIT",
   "repository": {
@@ -15,7 +15,7 @@
   ],
   "homepage": "https://github.com/zenparsing/htmltag",
   "devDependencies": {
-    "esdown": "^1.1.17"
+    "esdown": "^1.1.18"
   },
   "scripts": {
     "prepublishOnly": "npm run build",
