@@ -1,6 +1,6 @@
 'use strict';
 
-const TEXT = 1, OPEN = 2, ATTR = 4;
+const TEXT = 1, RAW = 2, OPEN = 3, ATTR = 4;
 const ATTR_KEY = 5, ATTR_KEY_WS = 6;
 const ATTR_VALUE_WS = 7, ATTR_VALUE = 8;
 const ATTR_VALUE_SQ = 9, ATTR_VALUE_DQ = 10;
@@ -14,13 +14,30 @@ function attributeChar(c) {
   return !whitespaceChar(c) && c !== '"' && c !== "'" && c !== '=' && c !== '/';
 }
 
-// Incrementally tokenize a chunk of QuasiHTML
-function readChunk(chunk, tokens, state = TEXT) {
+function rawTag(tag) {
+  return tag === 'script' || tag === 'style';
+}
+
+// Incrementally tokenize a chunk of HTML
+function readChunk(chunk) {
+  let state = this.state;
+  let tokens = this.tokens;
+  let tag = this.tag;
   let a = 0;
   let b = 0;
 
-  function move(s, pos = b + 1) { state = s; a = pos; }
-  function push(type, value = chunk.slice(a, b)) { tokens.push([type, value]); a = b; }
+  function move(s, pos = b + 1) {
+    state = s;
+    a = pos;
+  }
+
+  function push(type, value = chunk.slice(a, b)) {
+    a = b;
+    tokens.push([type, value]);
+    if (type === 'tag-start') {
+      tag = value;
+    }
+  }
 
   for (; b < chunk.length; ++b) {
     let c = chunk[b];
@@ -35,7 +52,8 @@ function readChunk(chunk, tokens, state = TEXT) {
       c === '>' &&
       state !== ATTR_VALUE_SQ &&
       state !== ATTR_VALUE_DQ &&
-      state !== COMMENT
+      state !== COMMENT &&
+      state !== RAW
     ) {
       if (state === OPEN) {
         push('tag-start');
@@ -45,7 +63,7 @@ function readChunk(chunk, tokens, state = TEXT) {
         push('attr-value');
       }
       push('tag-end');
-      move(TEXT);
+      move(rawTag(tag) ? RAW : TEXT);
     } else if (state === OPEN) {
       if (c === '-' && chunk.slice(a, b) === '!-') {
         move(COMMENT);
@@ -98,6 +116,11 @@ function readChunk(chunk, tokens, state = TEXT) {
         push('attr-value');
         move(ATTR);
       }
+    } else if (state === RAW) {
+      if (c === '>' && chunk.slice(b - tag.length - 2, b) === '</' + tag) {
+        b -= tag.length + 3;
+        state = TEXT;
+      }
     } else if (state === COMMENT) {
       if (c === '>' && chunk.slice(b - 2, b) === '--') {
         move(TEXT);
@@ -123,14 +146,19 @@ function readChunk(chunk, tokens, state = TEXT) {
     }
   }
 
-  return state;
+  this.state = state;
+  this.tag = tag;
 }
 
 // Pushes a replacement value into the token list
-function pushValue(value, tokens, state = TEXT) {
+function pushValue(value) {
+  let state = this.state;
+  let tokens = this.tokens;
   let type = '';
+
   switch (state) {
     case TEXT:
+    case RAW:
       type = 'text';
       break;
     case OPEN:
@@ -152,18 +180,21 @@ function pushValue(value, tokens, state = TEXT) {
       type = 'attr-value';
       break;
   }
+
   if (type) {
     tokens.push([type, value]);
   }
-  return state;
+
+  this.state = state;
 }
 
 function createScanner() {
   return {
     tokens: [],
-    state: undefined,
-    readChunk(chunk) { this.state = readChunk(chunk, this.tokens, this.state); },
-    pushValue(value) { this.state = pushValue(value, this.tokens, this.state); },
+    state: TEXT,
+    tag: '',
+    readChunk,
+    pushValue,
   };
 }
 

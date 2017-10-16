@@ -54,3 +54,27 @@ const assert = require('assert');
     ['tag-end', '/'],
   ]);
 }
+
+{ // Raw tag: script
+  let scanner = new Scanner();
+  scanner.readChunk('<script>console.log("<tag>")</script>');
+  assert.deepEqual(scanner.tokens, [
+    ['tag-start', 'script'],
+    ['tag-end', ''],
+    ['text', 'console.log("<tag>")'],
+    ['tag-start', '/script'],
+    ['tag-end', ''],
+  ]);
+}
+
+{ // Raw tag: style
+  let scanner = new Scanner();
+  scanner.readChunk('<style>a { content: "<tag>" }</style>');
+  assert.deepEqual(scanner.tokens, [
+    ['tag-start', 'style'],
+    ['tag-end', ''],
+    ['text', 'a { content: "<tag>" }'],
+    ['tag-start', '/style'],
+    ['tag-end', ''],
+  ]);
+}
