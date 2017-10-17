@@ -114,3 +114,15 @@ const assert = require('assert');
     ['tag-end', ''],
   ]);
 }
+
+{ // No escapes in raw
+  let scanner = new Scanner();
+  scanner.readChunk('<script>\\x40</script>');
+  assert.deepEqual(scanner.tokens, [
+    ['tag-start', 'script'],
+    ['tag-end', ''],
+    ['text', '\\x40'],
+    ['tag-start', '/script'],
+    ['tag-end', ''],
+  ]);
+}

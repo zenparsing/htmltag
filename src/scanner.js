@@ -44,7 +44,16 @@ function readChunk(chunk) {
 
   for (; b < chunk.length; ++b) {
     let c = chunk[b];
-    if (c === '\\') {
+    if (state === RAW) {
+      if (c === '>' && chunk.slice(b - tag.length - 2, b) === '</' + tag) {
+        b -= tag.length + 3;
+        state = TEXT;
+      }
+    } else if (state === COMMENT) {
+      if (c === '>' && chunk.slice(b - 2, b) === '--') {
+        move(TEXT);
+      }
+    } else if (c === '\\') {
       chunk = chunk.slice(0, b) + chunk.slice(b).replace(ESC_RE, (m, x, y) =>
         m === '\\' ? '' : String.fromCharCode(parseInt(x || y, 16))
       );
@@ -54,15 +63,6 @@ function readChunk(chunk) {
           push('text');
         }
         move(OPEN);
-      }
-    } else if (state === RAW) {
-      if (c === '>' && chunk.slice(b - tag.length - 2, b) === '</' + tag) {
-        b -= tag.length + 3;
-        state = TEXT;
-      }
-    } else if (state === COMMENT) {
-      if (c === '>' && chunk.slice(b - 2, b) === '--') {
-        move(TEXT);
       }
     } else if (state === ATTR_VALUE_SQ) {
       if (c === "'") {
