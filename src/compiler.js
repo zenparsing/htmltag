@@ -6,8 +6,9 @@ const selfClosing = require('./self-closing');
 function createCompiler(createElement, options = {}) {
   return function htmlCompiler(literals, ...values) {
     let scanner = new Scanner();
-    for (let i = 0; i < literals.length; i++) {
-      scanner.readChunk(literals[i]);
+    let raw = literals.raw;
+    for (let i = 0; i < raw.length; i++) {
+      scanner.readChunk(raw[i]);
       if (i < values.length) {
         scanner.pushValue(values[i]);
       }

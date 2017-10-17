@@ -6,6 +6,8 @@ const ATTR_VALUE_WS = 7, ATTR_VALUE = 8;
 const ATTR_VALUE_SQ = 9, ATTR_VALUE_DQ = 10;
 const COMMENT = 11;
 
+const ESC_RE = /^\\(?:x([0-9a-fA-F]{2})|u([0-9a-fA-F]{4}))?/;
+
 function whitespaceChar(c) {
   return /\s/.test(c);
 }
@@ -31,30 +33,48 @@ function readChunk(chunk) {
     a = pos;
   }
 
-  function push(type, value = chunk.slice(a, b)) {
-    a = b;
+  function push(type) {
+    let value = chunk.slice(a, b);
     tokens.push([type, value]);
     if (type === 'tag-start') {
       tag = value;
     }
+    a = b;
   }
 
   for (; b < chunk.length; ++b) {
     let c = chunk[b];
-    if (state === TEXT) {
+    if (c === '\\') {
+      chunk = chunk.slice(0, b) + chunk.slice(b).replace(ESC_RE, (m, x, y) =>
+        m === '\\' ? '' : String.fromCharCode(parseInt(x || y, 16))
+      );
+    } else if (state === TEXT) {
       if (c === '<') {
         if (a < b) {
           push('text');
         }
         move(OPEN);
       }
-    } else if (
-      c === '>' &&
-      state !== ATTR_VALUE_SQ &&
-      state !== ATTR_VALUE_DQ &&
-      state !== COMMENT &&
-      state !== RAW
-    ) {
+    } else if (state === RAW) {
+      if (c === '>' && chunk.slice(b - tag.length - 2, b) === '</' + tag) {
+        b -= tag.length + 3;
+        state = TEXT;
+      }
+    } else if (state === COMMENT) {
+      if (c === '>' && chunk.slice(b - 2, b) === '--') {
+        move(TEXT);
+      }
+    } else if (state === ATTR_VALUE_SQ) {
+      if (c === "'") {
+        push('attr-value');
+        move(ATTR);
+      }
+    } else if (state === ATTR_VALUE_DQ) {
+      if (c === '"') {
+        push('attr-value');
+        move(ATTR);
+      }
+    } else if (c === '>') {
       if (state === OPEN) {
         push('tag-start');
       } else if (state === ATTR_KEY) {
@@ -101,29 +121,10 @@ function readChunk(chunk) {
       } else if (!whitespaceChar(c)) {
         move(ATTR_VALUE, b);
       }
-    } else if (state === ATTR_VALUE_DQ) {
-      if (c === '"') {
-        push('attr-value');
-        move(ATTR);
-      }
-    } else if (state === ATTR_VALUE_SQ) {
-      if (c === "'") {
-        push('attr-value');
-        move(ATTR);
-      }
     } else if (state === ATTR_VALUE) {
       if (whitespaceChar(c)) {
         push('attr-value');
         move(ATTR);
-      }
-    } else if (state === RAW) {
-      if (c === '>' && chunk.slice(b - tag.length - 2, b) === '</' + tag) {
-        b -= tag.length + 3;
-        state = TEXT;
-      }
-    } else if (state === COMMENT) {
-      if (c === '>' && chunk.slice(b - 2, b) === '--') {
-        move(TEXT);
       }
     }
   }

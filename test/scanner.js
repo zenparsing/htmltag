@@ -78,3 +78,39 @@ const assert = require('assert');
     ['tag-end', ''],
   ]);
 }
+
+{ // Character escapes
+  let scanner = new Scanner();
+  scanner.readChunk('<x>\\<tag\\></x>');
+  assert.deepEqual(scanner.tokens, [
+    ['tag-start', 'x'],
+    ['tag-end', ''],
+    ['text', '<tag>'],
+    ['tag-start', '/x'],
+    ['tag-end', ''],
+  ]);
+}
+
+{ // Hex escapes
+  let scanner = new Scanner();
+  scanner.readChunk('<x>\\x40</x>');
+  assert.deepEqual(scanner.tokens, [
+    ['tag-start', 'x'],
+    ['tag-end', ''],
+    ['text', '@'],
+    ['tag-start', '/x'],
+    ['tag-end', ''],
+  ]);
+}
+
+{ // Unicode escapes
+  let scanner = new Scanner();
+  scanner.readChunk('<x>\\u0040</x>');
+  assert.deepEqual(scanner.tokens, [
+    ['tag-start', 'x'],
+    ['tag-end', ''],
+    ['text', '@'],
+    ['tag-start', '/x'],
+    ['tag-end', ''],
+  ]);
+}

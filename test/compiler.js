@@ -138,6 +138,14 @@ const html = createCompiler((type, props, children) => {
   });
 }
 
+{ // Escapes
+  assert.deepEqual(html`<x>\<tag\>\&\u0040\x40</x>`, {
+    type: 'x',
+    props: {},
+    children: ['<tag>&@@'],
+  });
+}
+
 { // createFragment
   let html = createCompiler((type, props, children) => {
     return { type, props, children };
