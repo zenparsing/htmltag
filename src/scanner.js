@@ -130,7 +130,7 @@ function readChunk(chunk) {
   }
 
   if (a < b) {
-    if (state === TEXT) {
+    if (state === TEXT || state === RAW) {
       push('text');
     } else if (state === OPEN) {
       push('tag-start');
