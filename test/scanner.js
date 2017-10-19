@@ -35,6 +35,17 @@ const assert = require('assert');
   ]);
 }
 
+/*
+{ // Exclicit self-closing with no space
+  let scanner = new Scanner();
+  scanner.readChunk('<x/>');
+  assert.deepEqual(scanner.tokens, [
+    ['tag-start', 'x'],
+    ['tag-end', '/'],
+  ]);
+}
+*/
+
 { // Comments are excluded
   let scanner = new Scanner();
   scanner.readChunk('<!--comment-->');
@@ -43,6 +54,15 @@ const assert = require('assert');
   scanner.readChunk('hidden');
   scanner.readChunk('-->');
   assert.deepEqual(scanner.tokens, []);
+}
+
+{ // Strange tag name with !--
+  let scanner = new Scanner();
+  scanner.readChunk('<a!-- />');
+  assert.deepEqual(scanner.tokens, [
+    ['tag-start', 'a!--'],
+    ['tag-end', '/'],
+  ]);
 }
 
 { // Attribute key WS before />
@@ -67,8 +87,7 @@ const assert = require('assert');
   ]);
 }
 
-{
-  // Raw tag with values
+{ // Raw tag with values
   let scanner = new Scanner();
   scanner.readChunk('<script>a');
   scanner.pushValue('b');
@@ -80,6 +99,19 @@ const assert = require('assert');
     ['text', 'b'],
     ['text', 'c'],
     ['tag-start', '/script' ],
+    ['tag-end', ''],
+  ]);
+}
+
+{ // Raw self-closing
+  let scanner = new Scanner();
+  scanner.readChunk('<script /><x></x>');
+  assert.deepEqual(scanner.tokens, [
+    ['tag-start', 'script'],
+    ['tag-end', '/'],
+    ['tag-start', 'x'],
+    ['tag-end', ''],
+    ['tag-start', '/x'],
     ['tag-end', ''],
   ]);
 }
@@ -140,6 +172,47 @@ const assert = require('assert');
     ['tag-end', ''],
     ['text', '\\x40'],
     ['tag-start', '/script'],
+    ['tag-end', ''],
+  ]);
+}
+
+{ // Double backslash
+  let scanner = new Scanner();
+  scanner.readChunk('\\\\x\\\\y');
+  assert.deepEqual(scanner.tokens, [['text', '\\x\\y']]);
+}
+
+{ // Strange
+  let scanner = new Scanner();
+  scanner.readChunk('<a b=/>');
+  assert.deepEqual(scanner.tokens, [
+    ['tag-start', 'a'],
+    ['attr-key', 'b'],
+    ['tag-end', '/'],
+  ]);
+}
+
+{ // Strange
+  let scanner = new Scanner();
+  scanner.readChunk('<x /=y=1></x>');
+  assert.deepEqual(scanner.tokens, [
+    ['tag-start', 'x'],
+    ['attr-key', 'y'],
+    ['attr-value', '1'],
+    ['tag-end', ''],
+    ['tag-start', '/x'],
+    ['tag-end', ''],
+  ]);
+}
+
+{ // Missing closing tag name
+  let scanner = new Scanner();
+  scanner.readChunk(`<x>a</>`);
+  assert.deepEqual(scanner.tokens, [
+    ['tag-start', 'x'],
+    ['tag-end', ''],
+    ['text', 'a'],
+    ['tag-start', '/'],
     ['tag-end', ''],
   ]);
 }

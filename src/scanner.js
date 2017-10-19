@@ -8,12 +8,12 @@ const COMMENT = 11;
 
 const ESC_RE = /^\\(?:x([0-9a-fA-F]{2})|u([0-9a-fA-F]{4}))?/;
 
-function whitespaceChar(c) {
+function wsChar(c) {
   return /\s/.test(c);
 }
 
-function attributeChar(c) {
-  return !whitespaceChar(c) && c !== '"' && c !== "'" && c !== '=' && c !== '/';
+function attrChar(c) {
+  return !wsChar(c) && c !== '"' && c !== "'" && c !== '=' && c !== '/';
 }
 
 function rawTag(tag) {
@@ -33,8 +33,11 @@ function readChunk(chunk) {
     a = pos;
   }
 
-  function push(type) {
-    let value = chunk.slice(a, b);
+  function buffer() {
+    return chunk.slice(a, b);
+  }
+
+  function push(type, value = buffer()) {
     tokens.push([type, value]);
     if (type === 'tag-start') {
       tag = value;
@@ -42,24 +45,32 @@ function readChunk(chunk) {
     a = b;
   }
 
+  function lookbehind(m) {
+    return b - m.length >= a && chunk.slice(b - m.length, b) === m;
+  }
+
+  function unescape() {
+    chunk = chunk.slice(0, b) + chunk.slice(b).replace(ESC_RE, (m, x, y) =>
+      m === '\\' ? '' : String.fromCharCode(parseInt(x || y, 16))
+    );
+  }
+
   for (; b < chunk.length; ++b) {
     let c = chunk[b];
     if (state === RAW) {
-      if (c === '>' && chunk.slice(b - tag.length - 2, b) === '</' + tag) {
-        b -= tag.length + 3;
+      if (c === '>' && lookbehind('</' + tag)) {
+        b -= tag.length + 3; // Rewind to closing tag
         state = TEXT;
       }
     } else if (state === COMMENT) {
-      if (c === '>' && chunk.slice(b - 2, b) === '--') {
+      if (c === '>' && lookbehind('--')) {
         move(TEXT);
       }
     } else if (c === '\\') {
-      chunk = chunk.slice(0, b) + chunk.slice(b).replace(ESC_RE, (m, x, y) =>
-        m === '\\' ? '' : String.fromCharCode(parseInt(x || y, 16))
-      );
+      unescape();
     } else if (state === TEXT) {
       if (c === '<') {
-        if (a < b) {
+        if (b > a) {
           push('text');
         }
         move(OPEN);
@@ -82,47 +93,50 @@ function readChunk(chunk) {
       } else if (state === ATTR_VALUE) {
         push('attr-value');
       }
-      push('tag-end');
-      move(rawTag(tag) ? RAW : TEXT);
+      if (lookbehind('/')) {
+        push('tag-end', '/');
+        move(TEXT);
+      } else {
+        push('tag-end', '');
+        move(rawTag(tag) ? RAW : TEXT);
+      }
     } else if (state === OPEN) {
-      if (c === '-' && chunk.slice(a, b) === '!-') {
+      if (c === '-' && buffer() === '!-') {
         move(COMMENT);
-      } else if (whitespaceChar(c)) {
+      } else if (c === '/' && b === a) {
+        // Allow leading slash
+      } else if (!attrChar(c)) {
         push('tag-start');
         move(ATTR);
       }
     } else if (state === ATTR) {
-      if (attributeChar(c)) {
+      if (attrChar(c)) {
         move(ATTR_KEY, b);
-      } else if (!whitespaceChar(c)) {
-        move(ATTR, b);
       }
     } else if (state === ATTR_KEY) {
-      if (whitespaceChar(c)) {
-        push('attr-key');
-        move(ATTR_KEY_WS);
-      } else if (c === '=') {
+      if (c === '=') {
         push('attr-key');
         move(ATTR_VALUE_WS);
+      } else if (!attrChar(c)) {
+        push('attr-key');
+        move(ATTR_KEY_WS);
       }
     } else if (state === ATTR_KEY_WS) {
       if (c === '=') {
         move(ATTR_VALUE_WS);
-      } else if (attributeChar(c)) {
+      } else if (attrChar(c)) {
         move(ATTR_KEY, b);
-      } else if (!whitespaceChar(c)) {
-        move(ATTR, b);
       }
     } else if (state === ATTR_VALUE_WS) {
       if (c === '"') {
         move(ATTR_VALUE_DQ);
       } else if (c === "'") {
         move(ATTR_VALUE_SQ);
-      } else if (!whitespaceChar(c)) {
+      } else if (attrChar(c)) {
         move(ATTR_VALUE, b);
       }
     } else if (state === ATTR_VALUE) {
-      if (whitespaceChar(c)) {
+      if (!attrChar(c)) {
         push('attr-value');
         move(ATTR);
       }
