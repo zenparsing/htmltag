@@ -57,7 +57,7 @@ function compile(parts, createElement, options) {
 
     if (type === 'tag-start') {
       let value = read();
-      if (value[0] === '/') {
+      if (typeof value === 'string' && value[0] === '/') {
         // Closing tag
         pop();
       } else {

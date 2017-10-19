@@ -171,3 +171,7 @@ const html = createCompiler((type, props, children) => {
     ],
   });
 }
+
+{ // Null tags
+  assert.deepEqual(html`<${ null } />`, { type: null, props: {}, children: [] });
+}
