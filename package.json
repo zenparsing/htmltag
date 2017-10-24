@@ -15,7 +15,7 @@
   ],
   "homepage": "https://github.com/zenparsing/htmltag",
   "devDependencies": {
-    "esdown": "^1.2.3"
+    "esdown": "^1.2.5"
   },
   "scripts": {
     "prepublishOnly": "npm run build",
