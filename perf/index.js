@@ -4,9 +4,7 @@ const createCompiler = require('../src');
 
 let html = createCompiler((tag, props, children) => {
   return { tag, props, children };
-}, {
-  cache: null,
-});
+}, { cache: new WeakMap() });
 
 function time(name, count, fn) {
   let start = Date.now();

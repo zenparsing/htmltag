@@ -3,18 +3,29 @@
 const Scanner = require('./scanner');
 const selfClosing = require('./self-closing');
 
+const PLACEHOLDER = {};
+
 function createCompiler(createElement, options = {}) {
+  let cache = options.cache;
   return function htmlCompiler(literals, ...values) {
-    let scanner = new Scanner();
-    let raw = literals.raw;
-    for (let i = 0; i < raw.length; i++) {
-      scanner.readChunk(raw[i]);
-      if (i < values.length) {
-        scanner.pushValue(values[i]);
-      }
+    let tokens = cache && cache.get(literals);
+    if (!tokens) {
+      tokens = tokenize(literals.raw);
+      cache && cache.set(literals, tokens);
     }
-    return compile(scanner.tokens, createElement, options);
+    return compile(tokens, values, createElement, options);
   };
+}
+
+function tokenize(chunks) {
+  let scanner = new Scanner();
+  for (let i = 0; i < chunks.length; i++) {
+    scanner.readChunk(chunks[i]);
+    if (i < chunks.length - 1) {
+      scanner.pushValue(PLACEHOLDER);
+    }
+  }
+  return scanner.tokens;
 }
 
 function trimWhitespaceNodes(nodes) {
@@ -28,9 +39,10 @@ function trimWhitespaceNodes(nodes) {
   return a === b ? nodes : nodes.slice(a, b);
 }
 
-function compile(parts, createElement, options) {
+function compile(parts, values, createElement, options) {
   let root = { type: null, props: {}, children: [] };
   let hasElement = false;
+  let valueIndex = 0;
   let stack = [root];
   let index = 0;
   let type;
@@ -40,7 +52,14 @@ function compile(parts, createElement, options) {
   }
 
   function read() {
-    return index < parts.length ? parts[index++][1] : undefined;
+    let value = undefined;
+    if (index < parts.length) {
+      value = parts[index++][1];
+      if (value === PLACEHOLDER) {
+        value = values[valueIndex++];
+      }
+    }
+    return value;
   }
 
   function pop() {
