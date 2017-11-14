@@ -9,7 +9,16 @@ const COMMENT = 11;
 const ESC_RE = /^\\(?:x([0-9a-fA-F]{2})|u([0-9a-fA-F]{4}))?/;
 
 function wsChar(c) {
-  return /\s/.test(c);
+  switch (c) {
+    case ' ':
+    case '\n':
+    case '\r':
+    case '\t':
+    case '\f':
+    case '\v':
+      return true;
+  }
+  return c.charCodeAt(0) > 128 && /\s/.test(c);
 }
 
 function attrChar(c) {
@@ -203,14 +212,13 @@ function pushValue(value) {
   this.state = state;
 }
 
-function createScanner() {
-  return {
-    tokens: [],
-    state: TEXT,
-    tag: '',
-    readChunk,
-    pushValue,
-  };
+function Scanner() {
+  this.tokens = [];
+  this.state = TEXT;
+  this.tag = '';
 }
 
-module.exports = createScanner;
+Scanner.prototype.readChunk = readChunk;
+Scanner.prototype.pushValue = pushValue;
+
+module.exports = Scanner;
