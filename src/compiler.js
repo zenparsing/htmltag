@@ -38,10 +38,9 @@ function trimWhitespaceNodes(nodes) {
 }
 
 function compile(parts, values, createElement, options) {
-  let root = { type: null, props: {}, children: [] };
+  let stack = [null, {}, []];
   let hasElement = false;
   let valueIndex = 0;
-  let stack = [root];
   let index = 0;
   let type;
 
@@ -60,34 +59,44 @@ function compile(parts, values, createElement, options) {
     return value;
   }
 
+  function push(tag) {
+    stack.push(tag, {}, []);
+  }
+
   function pop() {
-    if (stack.length > 1) {
-      let node = stack.pop();
-      let element = createElement(node.type, node.props, node.children);
-      stack[stack.length - 1].children.push(element);
+    if (stack.length > 3) {
+      let children = stack.pop();
+      let props = stack.pop();
+      let tag = stack.pop();
       hasElement = true;
+      pushChild(createElement(tag, props, children));
+    }
+  }
+
+  function pushChild(c) {
+    stack[stack.length - 1].push(c);
+  }
+
+  function setProp(key, value, force) {
+    let props = stack[stack.length - 2];
+    if (force || !props[key]) {
+      props[key] = value;
     }
   }
 
   while ((type = peek())) {
-    let node = stack[stack.length - 1];
-
     if (type === 'tag-start') {
       let value = read();
       if (typeof value === 'string' && value[0] === '/') {
-        // Closing tag
         pop();
       } else {
-        // Open tag
-        stack.push({ type: value, props: {}, children: [] });
+        push(value);
       }
     } else if (type === 'attr-key') {
       let value = read();
       if (value && typeof value === 'object') {
         for (let key in value) {
-          if (!node.props[key]) {
-            node.props[key] = value[key];
-          }
+          setProp(key, value[key], false);
         }
       } else {
         let propKey = value;
@@ -105,7 +114,7 @@ function compile(parts, values, createElement, options) {
           }
         }
         if (propKey) {
-          node.props[propKey] = propValue;
+          setProp(propKey, propValue, true);
         }
       }
     } else if (type === 'tag-end') {
@@ -113,19 +122,21 @@ function compile(parts, values, createElement, options) {
         pop();
       }
     } else if (type === 'text') {
-      node.children.push(read());
+      pushChild(read());
     } else {
       throw new Error(`Unexpected token ${ type }`);
     }
   }
 
-  let children = trimWhitespaceNodes(root.children);
+  let children = trimWhitespaceNodes(stack[2]);
   if (hasElement && children.length === 1) {
     return children[0];
   }
+
   if (options.createFragment) {
     return options.createFragment(children);
   }
+
   throw new Error('HTML template must have exactly one root element');
 }
 
