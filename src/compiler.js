@@ -83,12 +83,12 @@ function compile(parts, values, createElement, options) {
       }
     } else if (type === 'attr-key') {
       let value = read();
-      if (Object(value) === value) {
-        Object.keys(value).forEach(key => {
+      if (value && typeof value === 'object') {
+        for (let key in value) {
           if (!node.props[key]) {
             node.props[key] = value[key];
           }
-        });
+        }
       } else {
         let propKey = value;
         let propValue = '';
