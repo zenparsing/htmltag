@@ -63,18 +63,6 @@ const html = createCompiler((type, props, children) => {
   });
 }
 
-{ // Self-closing HTML tags
-  assert.deepEqual(html`
-    <div><br></div>
-  `, {
-    type: 'div',
-    props: {},
-    children: [
-      { type: 'br', props: {}, children: [] },
-    ],
-  });
-}
-
 { // Explicit self-closing tags
   assert.deepEqual(html`
     <div><a /></div>

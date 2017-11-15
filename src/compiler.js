@@ -1,8 +1,6 @@
 'use strict';
 
 const Scanner = require('./scanner');
-const selfClosing = require('./self-closing');
-
 const PLACEHOLDER = {};
 
 function createCompiler(createElement, options = {}) {
@@ -111,7 +109,7 @@ function compile(parts, values, createElement, options) {
         }
       }
     } else if (type === 'tag-end') {
-      if (read() === '/' || selfClosing(node.type)) {
+      if (read() === '/') {
         pop();
       }
     } else if (type === 'text') {
