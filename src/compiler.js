@@ -23,18 +23,25 @@ function tokenize(chunks) {
       scanner.pushValue(PLACEHOLDER);
     }
   }
-  return scanner.tokens;
+  return trimWhitespace(scanner.tokens);
 }
 
-function trimWhitespaceNodes(nodes) {
+function trimWhitespace(tokens) {
   let a = 0;
-  let b = nodes.length;
-  let ws = n => typeof n === 'string' && n.trim().length === 0;
+  let b = tokens.length;
 
-  for (; a < b && ws(nodes[a]); ++a);
-  for (; a < b - 1 && ws(nodes[b - 1]); --b);
+  if (b === 0) {
+    return tokens;
+  }
 
-  return a === b ? nodes : nodes.slice(a, b);
+  if (wsToken(tokens[0])) { a++; };
+  if (wsToken(tokens[b - 1])) { b--; }
+
+  return a === 0 && b === tokens.length ? tokens : tokens.slice(a, b);
+}
+
+function wsToken(t) {
+  return t[0] === 'text' && typeof t[1] === 'string' && (!t[1] || !t[1].trim());
 }
 
 function compile(parts, values, createElement, options) {
@@ -64,13 +71,14 @@ function compile(parts, values, createElement, options) {
   }
 
   function pop() {
-    if (stack.length > 3) {
-      let children = stack.pop();
-      let props = stack.pop();
-      let tag = stack.pop();
-      hasElement = true;
-      pushChild(createElement(tag, props, children));
+    if (stack.length === 3) {
+      return;
     }
+    let children = stack.pop();
+    let props = stack.pop();
+    let tag = stack.pop();
+    hasElement = true;
+    pushChild(createElement(tag, props, children));
   }
 
   function pushChild(c) {
@@ -128,7 +136,11 @@ function compile(parts, values, createElement, options) {
     }
   }
 
-  let children = trimWhitespaceNodes(stack[2]);
+  while (stack.length > 3) {
+    pop();
+  }
+
+  let children = stack[2];
   if (hasElement && children.length === 1) {
     return children[0];
   }

@@ -1,7 +1,7 @@
 'use strict';
 
 const createCompiler = require('../src');
-const largeDocument = require('./large');
+const largeDocument = require('./large-doc');
 
 let html = createCompiler((tag, props, children) => {
   return { tag, props, children };
@@ -19,6 +19,10 @@ function time(name, count, fn) {
   console.log(`${name}: ${Date.now() - start}ms`);
 }
 
-time('Large document scan', 100, i => {
+time('Large document compile', 10, i => {
+  largeDocument(html);
+});
+
+time('Large document compile (cached)', 10, i => {
   largeDocument(htmlWithCache);
 });

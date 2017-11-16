@@ -163,3 +163,15 @@ const html = createCompiler((type, props, children) => {
 { // Null tags
   assert.deepEqual(html`<${ null } />`, { type: null, props: {}, children: [] });
 }
+
+{ // Missing closing tags
+  assert.deepEqual(html`<div><div>`, {
+    type: 'div',
+    props: {},
+    children: [{
+      type: 'div',
+      props: {},
+      children: [],
+    }],
+  });
+}
