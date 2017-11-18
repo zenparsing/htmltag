@@ -34,7 +34,7 @@ function trimWhitespace(tokens) {
     return tokens;
   }
 
-  if (wsToken(tokens[0])) { a++; };
+  if (wsToken(tokens[0])) { a++; }
   if (wsToken(tokens[b - 1])) { b--; }
 
   return a === 0 && b === tokens.length ? tokens : tokens.slice(a, b);
@@ -45,7 +45,7 @@ function wsToken(t) {
 }
 
 function compile(parts, values, createElement, options) {
-  let stack = [null, {}, []];
+  let stack = [[]];
   let hasElement = false;
   let valueIndex = 0;
   let index = 0;
@@ -66,12 +66,8 @@ function compile(parts, values, createElement, options) {
     return value;
   }
 
-  function push(tag) {
-    stack.push(tag, {}, []);
-  }
-
   function pop() {
-    if (stack.length === 3) {
+    if (stack.length === 1) {
       return;
     }
     let children = stack.pop();
@@ -96,9 +92,12 @@ function compile(parts, values, createElement, options) {
     if (type === 'tag-start') {
       let value = read();
       if (typeof value === 'string' && value[0] === '/') {
+        while (peek() !== 'tag-end') {
+          read();
+        }
         pop();
       } else {
-        push(value);
+        stack.push(value, {}, []);
       }
     } else if (type === 'attr-key') {
       let value = read();
@@ -136,11 +135,11 @@ function compile(parts, values, createElement, options) {
     }
   }
 
-  while (stack.length > 3) {
+  while (stack.length > 1) {
     pop();
   }
 
-  let children = stack[2];
+  let children = stack[0];
   if (hasElement && children.length === 1) {
     return children[0];
   }

@@ -175,3 +175,23 @@ const html = createCompiler((type, props, children) => {
     }],
   });
 }
+
+{ // Attributes in closing tags
+  assert.deepEqual(html`
+    <div>
+      <div></div a=1>
+    </div>
+  `, {
+    type: 'div',
+    props: {},
+    children: [
+      '\n      ',
+      {
+        type: 'div',
+        props: {},
+        children: [],
+      },
+      '\n    ',
+    ],
+  });
+}

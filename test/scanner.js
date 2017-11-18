@@ -98,7 +98,7 @@ const assert = require('assert');
     ['text', 'a'],
     ['text', 'b'],
     ['text', 'c'],
-    ['tag-start', '/script' ],
+    ['tag-start', '/script'],
     ['tag-end', ''],
   ]);
 }
@@ -207,7 +207,7 @@ const assert = require('assert');
 
 { // Missing closing tag name
   let scanner = new Scanner();
-  scanner.readChunk(`<x>a</>`);
+  scanner.readChunk('<x>a</>');
   assert.deepEqual(scanner.tokens, [
     ['tag-start', 'x'],
     ['tag-end', ''],
