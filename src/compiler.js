@@ -4,14 +4,33 @@ const Scanner = require('./scanner');
 const PLACEHOLDER = {};
 
 function createCompiler(createElement, options = {}) {
-  let cache = options.cache;
-  return function htmlCompiler(literals, ...values) {
-    let tokens = cache && cache.get(literals);
-    if (!tokens) {
-      tokens = tokenize(literals.raw);
-      cache && cache.set(literals, tokens);
+  const cache = options.cache;
+
+  function TemplateResult(source, values) {
+    this.source = source;
+    this.tokens = null;
+    this.values = values;
+  }
+
+  TemplateResult.prototype.matches = function(other) {
+    return this.source === other.source;
+  };
+
+  TemplateResult.prototype.evaluate = function() {
+    if (!this.tokens) {
+      let tokens = cache && cache.get(this.source);
+      if (!tokens) {
+        tokens = tokenize(this.source.raw);
+        cache && cache.set(this.source, tokens);
+      }
+      this.tokens = tokens;
     }
-    return compile(tokens, values, createElement, options);
+    return compile(this.tokens, this.values, createElement, options);
+  };
+
+  return function htmlCompiler(literals, ...values) {
+    let result = new TemplateResult(literals, values);
+    return options.defer ? result : result.evaluate();
   };
 }
 
