@@ -8,75 +8,45 @@ const COMMENT = 11;
 
 const ESC_RE = /^\\(?:x([0-9a-fA-F]{2})|u([0-9a-fA-F]{4}))?/;
 
-function wsChar(c) {
-  switch (c) {
-    case ' ':
-    case '\n':
-    case '\r':
-    case '\t':
-    case '\f':
-    case '\v':
-      return true;
-  }
-  return c.charCodeAt(0) > 128 && /\s/.test(c);
+function Parser() {
+  this.tokens = [];
+  this.state = TEXT;
+  this.tag = '';
 }
 
-function attrChar(c) {
-  return !wsChar(c) && c !== '"' && c !== "'" && c !== '=' && c !== '/';
-}
-
-function rawTag(tag) {
-  return tag === 'script' || tag === 'style';
-}
-
-// Incrementally tokenize a chunk of HTML
-function readChunk(chunk) {
+Parser.prototype.parseChunk = function(chunk) {
   let state = this.state;
   let tokens = this.tokens;
   let tag = this.tag;
   let a = 0;
   let b = 0;
 
-  function move(s, pos = b + 1) {
+  function move(s, shift) {
     state = s;
-    a = pos;
+    a = shift ? b : b + 1;
   }
 
-  function buffer() {
-    return chunk.slice(a, b);
-  }
-
-  function push(type, value = buffer()) {
-    tokens.push([type, value]);
-    if (type === 'tag-start') {
-      tag = value;
-    }
+  function push(type, value) {
+    tokens.push([type, value === undefined ? chunk.slice(a, b) : value]);
     a = b;
-  }
-
-  function lookbehind(m) {
-    return b - m.length >= a && chunk.slice(b - m.length, b) === m;
-  }
-
-  function unescape() {
-    chunk = chunk.slice(0, b) + chunk.slice(b).replace(ESC_RE, (m, x, y) =>
-      m === '\\' ? '' : String.fromCharCode(parseInt(x || y, 16))
-    );
   }
 
   for (; b < chunk.length; ++b) {
     let c = chunk[b];
     if (state === RAW) {
-      if (c === '>' && lookbehind('</' + tag)) {
+      if (c === '>' && rmatch(chunk, b, '</' + tag)) {
         b -= tag.length + 3; // Rewind to closing tag
         state = TEXT;
       }
     } else if (state === COMMENT) {
-      if (c === '>' && lookbehind('--')) {
+      if (c === '>' && rmatch(chunk, b, '--')) {
         move(TEXT);
       }
     } else if (c === '\\') {
-      unescape();
+      // Unescape
+      chunk = chunk.slice(0, b) + chunk.slice(b).replace(ESC_RE, (m, x, y) =>
+        m === '\\' ? '' : String.fromCharCode(parseInt(x || y, 16))
+      );
     } else if (state === TEXT) {
       if (c === '<') {
         if (b > a) {
@@ -96,13 +66,13 @@ function readChunk(chunk) {
       }
     } else if (c === '>') {
       if (state === OPEN) {
-        push('tag-start');
+        push('tag-start', tag = chunk.slice(a, b));
       } else if (state === ATTR_KEY) {
         push('attr-key');
       } else if (state === ATTR_VALUE) {
         push('attr-value');
       }
-      if (lookbehind('/')) {
+      if (rmatch(chunk, b, '/') && tag[0] !== '/') {
         push('tag-end', '/');
         move(TEXT);
       } else {
@@ -110,8 +80,8 @@ function readChunk(chunk) {
         move(rawTag(tag) ? RAW : TEXT);
       }
     } else if (state === OPEN) {
-      if (c === '-' && buffer() === '!-') {
-        move(COMMENT);
+      if (c === '-' && chunk.slice(a, b) === '!-') {
+        state = COMMENT; a = b + 1;
       } else if (c === '/' && b === a) {
         // Allow leading slash
       } else if (!attrChar(c)) {
@@ -120,7 +90,7 @@ function readChunk(chunk) {
       }
     } else if (state === ATTR) {
       if (attrChar(c)) {
-        move(ATTR_KEY, b);
+        move(ATTR_KEY, true);
       }
     } else if (state === ATTR_KEY) {
       if (c === '=') {
@@ -134,7 +104,7 @@ function readChunk(chunk) {
       if (c === '=') {
         move(ATTR_VALUE_WS);
       } else if (attrChar(c)) {
-        move(ATTR_KEY, b);
+        move(ATTR_KEY, true);
       }
     } else if (state === ATTR_VALUE_WS) {
       if (c === '"') {
@@ -142,7 +112,7 @@ function readChunk(chunk) {
       } else if (c === "'") {
         move(ATTR_VALUE_SQ);
       } else if (attrChar(c)) {
-        move(ATTR_VALUE, b);
+        move(ATTR_VALUE, true);
       }
     } else if (state === ATTR_VALUE) {
       if (!attrChar(c)) {
@@ -172,10 +142,9 @@ function readChunk(chunk) {
 
   this.state = state;
   this.tag = tag;
-}
+};
 
-// Pushes a replacement value into the token list
-function pushValue(value) {
+Parser.prototype.pushValue = function(value) {
   let state = this.state;
   let tokens = this.tokens;
   let type = '';
@@ -210,15 +179,36 @@ function pushValue(value) {
   }
 
   this.state = state;
+};
+
+function Token(type, value) {
+  this.type = type;
+  this.value = value;
 }
 
-function Scanner() {
-  this.tokens = [];
-  this.state = TEXT;
-  this.tag = '';
+function rmatch(s, end, t) {
+  return end >= t.length && s.slice(end - t.length, end) === t;
 }
 
-Scanner.prototype.readChunk = readChunk;
-Scanner.prototype.pushValue = pushValue;
+function wsChar(c) {
+  switch (c) {
+    case ' ':
+    case '\n':
+    case '\r':
+    case '\t':
+    case '\f':
+    case '\v':
+      return true;
+  }
+  return c.charCodeAt(0) > 128 && /\s/.test(c);
+}
 
-module.exports = Scanner;
+function attrChar(c) {
+  return !wsChar(c) && c !== '"' && c !== "'" && c !== '=' && c !== '/';
+}
+
+function rawTag(tag) {
+  return tag === 'script' || tag === 'style';
+}
+
+module.exports = Parser;

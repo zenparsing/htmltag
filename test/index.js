@@ -1,5 +1,5 @@
 'use strict';
 
-require('./scanner');
+require('./parser');
 require('./compiler');
 require('./registry');

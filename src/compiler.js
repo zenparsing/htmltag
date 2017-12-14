@@ -1,6 +1,6 @@
 'use strict';
 
-const Scanner = require('./scanner');
+const Parser = require('./parser');
 const PLACEHOLDER = {};
 
 function createCompiler(createElement, options = {}) {
@@ -35,14 +35,14 @@ function createCompiler(createElement, options = {}) {
 }
 
 function tokenize(chunks) {
-  let scanner = new Scanner();
+  let parser = new Parser();
   for (let i = 0; i < chunks.length; i++) {
-    scanner.readChunk(chunks[i]);
+    parser.parseChunk(chunks[i]);
     if (i < chunks.length - 1) {
-      scanner.pushValue(PLACEHOLDER);
+      parser.pushValue(PLACEHOLDER);
     }
   }
-  return trimWhitespace(scanner.tokens);
+  return trimWhitespace(parser.tokens);
 }
 
 function trimWhitespace(tokens) {

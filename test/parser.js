@@ -1,14 +1,14 @@
 'use strict';
 
-const Scanner = require('../src/scanner');
+const Parser = require('../src/parser');
 const assert = require('assert');
 
 { // Tags and attributes
-  let scanner = new Scanner();
-  scanner.readChunk(`
+  let parser = new Parser();
+  parser.parseChunk(`
     <tag a=x b=1 c="y" d='z'></tag>
   `);
-  assert.deepEqual(scanner.tokens, [
+  assert.deepEqual(parser.tokens, [
     ['text', '\n    '],
     ['tag-start', 'tag'],
     ['attr-key', 'a'],
@@ -27,9 +27,9 @@ const assert = require('assert');
 }
 
 { // Explicit self-closing
-  let scanner = new Scanner();
-  scanner.readChunk('<x />');
-  assert.deepEqual(scanner.tokens, [
+  let parser = new Parser();
+  parser.parseChunk('<x />');
+  assert.deepEqual(parser.tokens, [
     ['tag-start', 'x'],
     ['tag-end', '/'],
   ]);
@@ -37,9 +37,9 @@ const assert = require('assert');
 
 /*
 { // Exclicit self-closing with no space
-  let scanner = new Scanner();
-  scanner.readChunk('<x/>');
-  assert.deepEqual(scanner.tokens, [
+  let parser = new Parser();
+  parser.parseChunk('<x/>');
+  assert.deepEqual(parser.tokens, [
     ['tag-start', 'x'],
     ['tag-end', '/'],
   ]);
@@ -47,28 +47,28 @@ const assert = require('assert');
 */
 
 { // Comments are excluded
-  let scanner = new Scanner();
-  scanner.readChunk('<!--comment-->');
-  assert.deepEqual(scanner.tokens, []);
-  scanner.readChunk('<!--');
-  scanner.readChunk('hidden');
-  scanner.readChunk('-->');
-  assert.deepEqual(scanner.tokens, []);
+  let parser = new Parser();
+  parser.parseChunk('<!--comment-->');
+  assert.deepEqual(parser.tokens, []);
+  parser.parseChunk('<!--');
+  parser.parseChunk('hidden');
+  parser.parseChunk('-->');
+  assert.deepEqual(parser.tokens, []);
 }
 
 { // Strange tag name with !--
-  let scanner = new Scanner();
-  scanner.readChunk('<a!-- />');
-  assert.deepEqual(scanner.tokens, [
+  let parser = new Parser();
+  parser.parseChunk('<a!-- />');
+  assert.deepEqual(parser.tokens, [
     ['tag-start', 'a!--'],
     ['tag-end', '/'],
   ]);
 }
 
 { // Attribute key WS before />
-  let scanner = new Scanner();
-  scanner.readChunk('<x a />');
-  assert.deepEqual(scanner.tokens, [
+  let parser = new Parser();
+  parser.parseChunk('<x a />');
+  assert.deepEqual(parser.tokens, [
     ['tag-start', 'x'],
     ['attr-key', 'a'],
     ['tag-end', '/'],
@@ -76,9 +76,9 @@ const assert = require('assert');
 }
 
 { // Raw tag: script
-  let scanner = new Scanner();
-  scanner.readChunk('<script>console.log("<tag>")</script>');
-  assert.deepEqual(scanner.tokens, [
+  let parser = new Parser();
+  parser.parseChunk('<script>console.log("<tag>")</script>');
+  assert.deepEqual(parser.tokens, [
     ['tag-start', 'script'],
     ['tag-end', ''],
     ['text', 'console.log("<tag>")'],
@@ -88,11 +88,11 @@ const assert = require('assert');
 }
 
 { // Raw tag with values
-  let scanner = new Scanner();
-  scanner.readChunk('<script>a');
-  scanner.pushValue('b');
-  scanner.readChunk('c</script>');
-  assert.deepEqual(scanner.tokens, [
+  let parser = new Parser();
+  parser.parseChunk('<script>a');
+  parser.pushValue('b');
+  parser.parseChunk('c</script>');
+  assert.deepEqual(parser.tokens, [
     ['tag-start', 'script'],
     ['tag-end', ''],
     ['text', 'a'],
@@ -104,9 +104,9 @@ const assert = require('assert');
 }
 
 { // Raw self-closing
-  let scanner = new Scanner();
-  scanner.readChunk('<script /><x></x>');
-  assert.deepEqual(scanner.tokens, [
+  let parser = new Parser();
+  parser.parseChunk('<script /><x></x>');
+  assert.deepEqual(parser.tokens, [
     ['tag-start', 'script'],
     ['tag-end', '/'],
     ['tag-start', 'x'],
@@ -117,9 +117,9 @@ const assert = require('assert');
 }
 
 { // Raw tag: style
-  let scanner = new Scanner();
-  scanner.readChunk('<style>a { content: "<tag>" }</style>');
-  assert.deepEqual(scanner.tokens, [
+  let parser = new Parser();
+  parser.parseChunk('<style>a { content: "<tag>" }</style>');
+  assert.deepEqual(parser.tokens, [
     ['tag-start', 'style'],
     ['tag-end', ''],
     ['text', 'a { content: "<tag>" }'],
@@ -129,9 +129,9 @@ const assert = require('assert');
 }
 
 { // Character escapes
-  let scanner = new Scanner();
-  scanner.readChunk('<x>\\<tag\\></x>');
-  assert.deepEqual(scanner.tokens, [
+  let parser = new Parser();
+  parser.parseChunk('<x>\\<tag\\></x>');
+  assert.deepEqual(parser.tokens, [
     ['tag-start', 'x'],
     ['tag-end', ''],
     ['text', '<tag>'],
@@ -141,9 +141,9 @@ const assert = require('assert');
 }
 
 { // Hex escapes
-  let scanner = new Scanner();
-  scanner.readChunk('<x>\\x40</x>');
-  assert.deepEqual(scanner.tokens, [
+  let parser = new Parser();
+  parser.parseChunk('<x>\\x40</x>');
+  assert.deepEqual(parser.tokens, [
     ['tag-start', 'x'],
     ['tag-end', ''],
     ['text', '@'],
@@ -153,9 +153,9 @@ const assert = require('assert');
 }
 
 { // Unicode escapes
-  let scanner = new Scanner();
-  scanner.readChunk('<x>\\u0040</x>');
-  assert.deepEqual(scanner.tokens, [
+  let parser = new Parser();
+  parser.parseChunk('<x>\\u0040</x>');
+  assert.deepEqual(parser.tokens, [
     ['tag-start', 'x'],
     ['tag-end', ''],
     ['text', '@'],
@@ -165,9 +165,9 @@ const assert = require('assert');
 }
 
 { // No escapes in raw
-  let scanner = new Scanner();
-  scanner.readChunk('<script>\\x40</script>');
-  assert.deepEqual(scanner.tokens, [
+  let parser = new Parser();
+  parser.parseChunk('<script>\\x40</script>');
+  assert.deepEqual(parser.tokens, [
     ['tag-start', 'script'],
     ['tag-end', ''],
     ['text', '\\x40'],
@@ -177,15 +177,15 @@ const assert = require('assert');
 }
 
 { // Double backslash
-  let scanner = new Scanner();
-  scanner.readChunk('\\\\x\\\\y');
-  assert.deepEqual(scanner.tokens, [['text', '\\x\\y']]);
+  let parser = new Parser();
+  parser.parseChunk('\\\\x\\\\y');
+  assert.deepEqual(parser.tokens, [['text', '\\x\\y']]);
 }
 
 { // Strange
-  let scanner = new Scanner();
-  scanner.readChunk('<a b=/>');
-  assert.deepEqual(scanner.tokens, [
+  let parser = new Parser();
+  parser.parseChunk('<a b=/>');
+  assert.deepEqual(parser.tokens, [
     ['tag-start', 'a'],
     ['attr-key', 'b'],
     ['tag-end', '/'],
@@ -193,9 +193,9 @@ const assert = require('assert');
 }
 
 { // Strange
-  let scanner = new Scanner();
-  scanner.readChunk('<x /=y=1></x>');
-  assert.deepEqual(scanner.tokens, [
+  let parser = new Parser();
+  parser.parseChunk('<x /=y=1></x>');
+  assert.deepEqual(parser.tokens, [
     ['tag-start', 'x'],
     ['attr-key', 'y'],
     ['attr-value', '1'],
@@ -206,9 +206,9 @@ const assert = require('assert');
 }
 
 { // Missing closing tag name
-  let scanner = new Scanner();
-  scanner.readChunk('<x>a</>');
-  assert.deepEqual(scanner.tokens, [
+  let parser = new Parser();
+  parser.parseChunk('<x>a</>');
+  assert.deepEqual(parser.tokens, [
     ['tag-start', 'x'],
     ['tag-end', ''],
     ['text', 'a'],
