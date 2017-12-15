@@ -27,10 +27,9 @@ TemplateResult.prototype.matches = function(other) {
 };
 
 TemplateResult.prototype.evaluate = function() {
-  let actions = this.actions;
-  let root = actions.createRoot();
-  walk(0, root, this.tokens, this.values, actions);
-  return actions.finishRoot(root);
+  let root = this.actions.createRoot();
+  walk(0, root, this.tokens, this.values, this.actions);
+  return this.actions.finishRoot(root);
 };
 
 function PlaceHolder(pos) {
@@ -45,8 +44,7 @@ function tokenize(chunks) {
       parser.pushValue(new PlaceHolder(i));
     }
   }
-  parser.trim();
-  return parser.tokens;
+  return parser.end();
 }
 
 function getValue(token, values) {
