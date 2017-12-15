@@ -4,7 +4,7 @@ const createCompiler = require('../src/compiler');
 const assert = require('assert');
 const actions = require('../actions');
 
-const html = createCompiler(actions);
+const html = createCompiler({ actions });
 
 { // Attributes
   assert.deepEqual(html`
@@ -73,25 +73,6 @@ const html = createCompiler(actions);
     ],
   });
 }
-
-/*
-{ // Error if no elements
-  assert.throws(() => {
-    html`
-      text only
-    `;
-  });
-}
-
-{ // Error if multiple root elements
-  assert.throws(() => {
-    html`
-      <div></div>
-      <div></div>
-    `;
-  });
-}
-*/
 
 { // Flag attributes
   assert.deepEqual(html`

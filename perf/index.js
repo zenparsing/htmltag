@@ -4,8 +4,8 @@ const createCompiler = require('../src');
 const largeDocument = require('./large-doc');
 const actions = require('../actions');
 
-let html = createCompiler(actions);
-let htmlWithCache = createCompiler(actions, { cache: new WeakMap() });
+let html = createCompiler({ actions });
+let htmlWithCache = createCompiler({ actions, cache: new WeakMap() });
 
 function time(name, count, fn) {
   let start = Date.now();

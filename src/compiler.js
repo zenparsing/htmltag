@@ -3,7 +3,7 @@
 const Parser = require('./parser');
 const PLACEHOLDER = {};
 
-function createCompiler(actions, options = {}) {
+function createCompiler(options = {}) {
   let cache = options.cache;
   return function htmlCompiler(literals, ...values) {
     let tokens = cache && cache.get(literals);
@@ -11,23 +11,21 @@ function createCompiler(actions, options = {}) {
       tokens = tokenize(literals.raw);
       cache && cache.set(literals, tokens);
     }
-    let result = new TemplateResult(tokens, values, actions);
-    return options.defer ? result : result.evaluate();
+    let result = new TemplateResult(tokens, values);
+    return options.actions ? result.evaluate(options.actions) : result;
   };
 }
 
-function TemplateResult(tokens, values, actions) {
+function TemplateResult(tokens, values) {
   this.tokens = tokens;
   this.values = values;
-  this.actions = actions;
 }
 
 TemplateResult.prototype.matches = function(other) {
   return this.tokens === other.tokens;
 };
 
-TemplateResult.prototype.evaluate = function() {
-  let actions = this.actions;
+TemplateResult.prototype.evaluate = function(actions) {
   let root = actions.createRoot();
   walk(0, root, this.tokens, new Vals(this.values, actions), actions);
   return actions.finishRoot(root);
@@ -70,7 +68,7 @@ function walk(i, node, tokens, vals, actions) {
           while (i < tokens.length && tokens[++i][0] !== 'tag-end'); // Skip attributes
           return i;
         }
-        let child = actions.createNode(tag);
+        let child = actions.createNode(tag, node);
         i = walk(i + 1, child, tokens, vals, actions);
         actions.addChild(node, actions.finishNode(child));
         break;
