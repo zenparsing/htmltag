@@ -68,12 +68,16 @@ function createCompiler(createElement, options = {}) {
   };
 }
 
+function PlaceHolder(pos) {
+  this.pos = pos;
+}
+
 function tokenize(chunks) {
   let parser = new Parser();
   for (let i = 0; i < chunks.length; i++) {
     parser.parseChunk(chunks[i]);
     if (i < chunks.length - 1) {
-      parser.pushValue({ _placeholder: i });
+      parser.pushValue(new PlaceHolder(i));
     }
   }
   return trimWhitespace(parser.tokens);
@@ -99,7 +103,7 @@ function wsToken(t) {
 
 function getValue(token, values) {
   let v = token[1];
-  return typeof v._placeholder === 'number' ? values[v._placeholder] : v;
+  return v instanceof PlaceHolder ? values[v.pos] : v;
 }
 
 function closingTag(tag) {
