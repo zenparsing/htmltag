@@ -190,18 +190,19 @@ Parser.prototype.pushValue = function(value) {
 };
 
 Parser.prototype.trim = function() {
+  let tokens = this.tokens;
   let a = 0;
-  let b = this.tokens.length;
+  let b = tokens.length;
 
   if (b === 0) {
     return;
   }
 
-  if (wsToken(this.tokens[0])) { a++; }
-  if (wsToken(this.tokens[b - 1])) { b--; }
+  if (wsToken(tokens[0])) { a++; }
+  if (wsToken(tokens[b - 1])) { b--; }
 
   if (a !== 0 || b !== tokens.length) {
-    this.tokens = this.tokens.slice(a, b);
+    this.tokens = tokens.slice(a, b);
   }
 };
 

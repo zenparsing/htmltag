@@ -1,32 +1,32 @@
 module.exports = {
-  createRoot() {
+  createRoot: function() {
     return this.createNode('#document-fragment');
   },
-  finishRoot(root) {
+  finishRoot: function(root) {
     let c = root.children;
     return c.length === 1 && typeof c[0] !== 'string' ? c[0] : root;
   },
-  createNode(tag) {
-    return { tag, attributes: {}, children: [] };
+  createNode: function(tag) {
+    return { tag, attributes: Object.create(null), children: [] };
   },
-  finishNode(node) {
+  finishNode: function(node) {
     // Empty
   },
-  addChild(node, child) {
+  addChild: function(node, child) {
     node.children.push(child);
   },
-  addText(node, text) {
+  addText: function(node, text) {
     this.addChild(node, text);
   },
-  setAttribute(node, name, value) {
+  setAttribute: function(node, name, value) {
     node.attributes[name] = value === undefined ? true : value;
   },
-  setAttributes(node, map) {
+  setAttributes: function(node, map) {
     for (let key in map) {
       this.setAttribute(node, key, map[key]);
     }
   },
-  setAttributeParts(node, name, parts) {
+  setAttributeParts: function(node, name, parts) {
     this.setAttribute(node, name, parts.join(''));
   },
 };
