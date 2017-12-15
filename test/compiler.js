@@ -2,8 +2,9 @@
 
 const createCompiler = require('../src/compiler');
 const assert = require('assert');
+const actions = require('../src/actions');
 
-const html = createCompiler();
+const html = createCompiler(actions);
 
 { // Attributes
   assert.deepEqual(html`

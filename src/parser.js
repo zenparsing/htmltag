@@ -189,6 +189,26 @@ Parser.prototype.pushValue = function(value) {
   this.state = state;
 };
 
+Parser.prototype.trim = function() {
+  let a = 0;
+  let b = this.tokens.length;
+
+  if (b === 0) {
+    return;
+  }
+
+  if (wsToken(this.tokens[0])) { a++; }
+  if (wsToken(this.tokens[b - 1])) { b--; }
+
+  if (a !== 0 || b !== tokens.length) {
+    this.tokens = this.tokens.slice(a, b);
+  }
+};
+
+function wsToken(t) {
+  return t[0] === 'text' && typeof t[1] === 'string' && (!t[1] || !t[1].trim());
+}
+
 function rmatch(s, end, t) {
   return end >= t.length && s.slice(end - t.length, end) === t;
 }

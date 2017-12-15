@@ -1,72 +1,37 @@
 'use strict';
 
 const Parser = require('./parser');
-const PLACEHOLDER = {};
 
-const defaultActions = {
-  createRoot() {
-    return this.createNode('#document-fragment');
-  },
-  finishRoot(root) {
-    let c = root.children;
-    return c.length === 1 && typeof c[0] !== 'string' ? c[0] : root;
-  },
-  addChild(node, child) {
-    node.children.push(child);
-  },
-  addText(node, text) {
-    this.addChild(node, text);
-  },
-  createNode(tag) {
-    return { tag, attributes: {}, children: [] };
-  },
-  finishNode(node) {},
-  setAttribute(node, name, value) {
-    node.attributes[name] = value === undefined ? true : value;
-  },
-  setAttributes(node, map) {
-    for (let key in map) {
-      this.setAttribute(node, key, map[key]);
-    }
-  },
-  setAttributeParts(node, name, parts) {
-    this.setAttribute(node, name, parts.join(''));
-  },
-};
-
-function createCompiler(createElement, options = {}) {
-  let cache = options.cache;
-  let actions = options.actions || defaultActions;
-
-  function TemplateResult(source, values) {
-    this.source = source;
-    this.tokens = null;
-    this.values = values;
-  }
-
-  TemplateResult.prototype.matches = function(other) {
-    return this.source === other.source;
-  };
-
-  TemplateResult.prototype.evaluate = function() {
-    if (!this.tokens) {
-      let tokens = cache && cache.get(this.source);
-      if (!tokens) {
-        tokens = tokenize(this.source.raw);
-        cache && cache.set(this.source, tokens);
-      }
-      this.tokens = tokens;
-    }
-    let root = actions.createRoot();
-    walk(0, root, this.tokens, this.values, actions);
-    return actions.finishRoot(root);
-  };
-
+function createCompiler(actions, options) {
+  let cache = options && options.cache;
   return function htmlCompiler(literals, ...values) {
-    let result = new TemplateResult(literals, values);
-    return options.defer ? result : result.evaluate();
+    let tokens = cache && cache.get(literals);
+    if (!tokens) {
+      tokens = tokenize(literals.raw);
+      cache && cache.set(literals, tokens);
+    }
+    // TODO: Defer - how?
+    let result = new TemplateResult(tokens, values, actions);
+    return result.evaluate();
   };
 }
+
+function TemplateResult(tokens, values, actions) {
+  this.tokens = tokens;
+  this.values = values;
+  this.actions = actions;
+}
+
+TemplateResult.prototype.matches = function(other) {
+  return this.tokens === other.tokens;
+};
+
+TemplateResult.prototype.evaluate = function() {
+  let actions = this.actions;
+  let root = actions.createRoot();
+  walk(0, root, this.tokens, this.values, actions);
+  return actions.finishRoot(root);
+};
 
 function PlaceHolder(pos) {
   this.pos = pos;
@@ -80,25 +45,8 @@ function tokenize(chunks) {
       parser.pushValue(new PlaceHolder(i));
     }
   }
-  return trimWhitespace(parser.tokens);
-}
-
-function trimWhitespace(tokens) {
-  let a = 0;
-  let b = tokens.length;
-
-  if (b === 0) {
-    return tokens;
-  }
-
-  if (wsToken(tokens[0])) { a++; }
-  if (wsToken(tokens[b - 1])) { b--; }
-
-  return a === 0 && b === tokens.length ? tokens : tokens.slice(a, b);
-}
-
-function wsToken(t) {
-  return t[0] === 'text' && typeof t[1] === 'string' && (!t[1] || !t[1].trim());
+  parser.trim();
+  return parser.tokens;
 }
 
 function getValue(token, values) {

@@ -2,14 +2,10 @@
 
 const createCompiler = require('../src');
 const largeDocument = require('./large-doc');
+const actions = require('../src/actions');
 
-let html = createCompiler((tag, props, children) => {
-  return { tag, props, children };
-});
-
-let htmlWithCache = createCompiler((tag, props, children) => {
-  return { tag, props, children };
-}, { cache: new WeakMap() });
+let html = createCompiler(actions);
+let htmlWithCache = createCompiler(actions, { cache: new WeakMap() });
 
 function time(name, count, fn) {
   let start = Date.now();
