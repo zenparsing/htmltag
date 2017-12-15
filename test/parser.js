@@ -35,7 +35,6 @@ const assert = require('assert');
   ]);
 }
 
-/*
 { // Exclicit self-closing with no space
   let parser = new Parser();
   parser.parseChunk('<x/>');
@@ -44,7 +43,6 @@ const assert = require('assert');
     ['tag-end', '/'],
   ]);
 }
-*/
 
 { // Comments are excluded
   let parser = new Parser();
@@ -214,5 +212,70 @@ const assert = require('assert');
     ['text', 'a'],
     ['tag-start', '/'],
     ['tag-end', ''],
+  ]);
+}
+
+{ // Attribute parts DQ
+  let parser = new Parser();
+  parser.parseChunk('<x y="a');
+  parser.pushValue('b');
+  parser.parseChunk('c');
+  parser.pushValue('d');
+  parser.parseChunk('e" />');
+  assert.deepEqual(parser.tokens, [
+    ['tag-start', 'x'],
+    ['attr-key', 'y'],
+    ['attr-part', 'a'],
+    ['attr-part', 'b'],
+    ['attr-part', 'c'],
+    ['attr-part', 'd'],
+    ['attr-part', 'e'],
+    ['tag-end', '/'],
+  ]);
+}
+
+{ // Attribute parts SQ
+  let parser = new Parser();
+  parser.parseChunk(`<x y='a`);
+  parser.pushValue('b');
+  parser.parseChunk('c');
+  parser.pushValue('d');
+  parser.parseChunk(`e' />`);
+  assert.deepEqual(parser.tokens, [
+    ['tag-start', 'x'],
+    ['attr-key', 'y'],
+    ['attr-part', 'a'],
+    ['attr-part', 'b'],
+    ['attr-part', 'c'],
+    ['attr-part', 'd'],
+    ['attr-part', 'e'],
+    ['tag-end', '/'],
+  ]);
+}
+
+{ // Attribute parts must be quoted
+  let parser = new Parser();
+  parser.parseChunk(`<x y=a`);
+  parser.pushValue('b');
+  parser.parseChunk(`c />`);
+  assert.deepEqual(parser.tokens, [
+    ['tag-start', 'x'],
+    ['attr-key', 'y'],
+    ['attr-value', 'a'],
+    ['attr-map', 'b'],
+    ['attr-key', 'c'],
+    ['tag-end', '/'],
+  ]);
+}
+
+{ // Attribute maps
+  let parser = new Parser();
+  parser.parseChunk(`<x`);
+  parser.pushValue('map');
+  parser.parseChunk(`/>`);
+  assert.deepEqual(parser.tokens, [
+    ['tag-start', 'x'],
+    ['attr-map', 'map'],
+    ['tag-end', '/'],
   ]);
 }

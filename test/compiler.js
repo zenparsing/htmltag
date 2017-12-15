@@ -3,16 +3,14 @@
 const createCompiler = require('../src/compiler');
 const assert = require('assert');
 
-const html = createCompiler((type, props, children) => {
-  return { type, props, children };
-});
+const html = createCompiler();
 
 { // Attributes
   assert.deepEqual(html`
     <div a=1 b='2' c=${ 3 } d='4${ 4 }4' ${{ e: 5, f: 6, a: 7 }}></div>
   `, {
-    type: 'div',
-    props: { a: '1', b: '2', c: 3, d: '444', e: 5, f: 6 },
+    tag: 'div',
+    attributes: { a: 7, b: '2', c: 3, d: '444', e: 5, f: 6 },
     children: [],
   });
 }
@@ -24,11 +22,11 @@ const html = createCompiler((type, props, children) => {
       <div></div>
     </${ custom }>
   `, {
-    type: 'dynamic-type',
-    props: { id: 'c' },
+    tag: 'dynamic-type',
+    attributes: { id: 'c' },
     children: [
       '\n      ',
-      { type: 'div', props: {}, children: [] },
+      { tag: 'div', attributes: {}, children: [] },
       '\n    ',
     ],
   });
@@ -43,21 +41,21 @@ const html = createCompiler((type, props, children) => {
       <span></span>
     </div>
   `, {
-    type: 'div',
-    props: {},
+    tag: 'div',
+    attributes: {},
     children: [
       '\n      ',
       {
-        type: 'dynamic',
-        props: {},
+        tag: 'dynamic',
+        attributes: {},
         children: [
           '\n        ',
-          { type: 'span', props: {}, children: [] },
+          { tag: 'span', attributes: {}, children: [] },
           '\n      ',
         ],
       },
       '\n      ',
-      { type: 'span', props: {}, children: [] },
+      { tag: 'span', attributes: {}, children: [] },
       '\n    ',
     ],
   });
@@ -67,14 +65,15 @@ const html = createCompiler((type, props, children) => {
   assert.deepEqual(html`
     <div><a /></div>
   `, {
-    type: 'div',
-    props: {},
+    tag: 'div',
+    attributes: {},
     children: [
-      { type: 'a', props: {}, children: [] },
+      { tag: 'a', attributes: {}, children: [] },
     ],
   });
 }
 
+/*
 { // Error if no elements
   assert.throws(() => {
     html`
@@ -91,13 +90,14 @@ const html = createCompiler((type, props, children) => {
     `;
   });
 }
+*/
 
 { // Flag attributes
   assert.deepEqual(html`
     <x f1 x=1 f2 />
   `, {
-    type: 'x',
-    props: {
+    tag: 'x',
+    attributes: {
       f1: true,
       x: 1,
       f2: true,
@@ -110,8 +110,8 @@ const html = createCompiler((type, props, children) => {
   assert.deepEqual(html`
     <x a=${ false } />
   `, {
-    type: 'x',
-    props: { a: false },
+    tag: 'x',
+    attributes: { a: false },
     children: [],
   });
 }
@@ -120,57 +120,49 @@ const html = createCompiler((type, props, children) => {
   assert.deepEqual(html`
     <x ${ null } a=1 />
   `, {
-    type: 'x',
-    props: { a: '1' },
+    tag: 'x',
+    attributes: { a: '1' },
     children: [],
   });
 }
 
 { // Escapes
   assert.deepEqual(html`<x>\<tag\>\&\u0040\x40</x>`, {
-    type: 'x',
-    props: {},
+    tag: 'x',
+    attributes: {},
     children: ['<tag>&@@'],
   });
 }
 
 { // createFragment
-  let html = createCompiler((type, props, children) => {
-    return { type, props, children };
-  }, {
-    createFragment(children) {
-      return { type: '#fragment', props: {}, children };
-    },
-  });
-
   assert.deepEqual(html`
     <li>One</li>
     <li>Two</li>
     <li>Three</li>
   `, {
-    type: '#fragment',
-    props: {},
+    tag: '#document-fragment',
+    attributes: {},
     children: [
-      { type: 'li', props: {}, children: ['One'] },
+      { tag: 'li', attributes: {}, children: ['One'] },
       '\n    ',
-      { type: 'li', props: {}, children: ['Two'] },
+      { tag: 'li', attributes: {}, children: ['Two'] },
       '\n    ',
-      { type: 'li', props: {}, children: ['Three'] },
+      { tag: 'li', attributes: {}, children: ['Three'] },
     ],
   });
 }
 
 { // Null tags
-  assert.deepEqual(html`<${ null } />`, { type: null, props: {}, children: [] });
+  assert.deepEqual(html`<${ null } />`, { tag: null, attributes: {}, children: [] });
 }
 
 { // Missing closing tags
   assert.deepEqual(html`<div><div>`, {
-    type: 'div',
-    props: {},
+    tag: 'div',
+    attributes: {},
     children: [{
-      type: 'div',
-      props: {},
+      tag: 'div',
+      attributes: {},
       children: [],
     }],
   });
@@ -182,13 +174,13 @@ const html = createCompiler((type, props, children) => {
       <div></div a=1>
     </div>
   `, {
-    type: 'div',
-    props: {},
+    tag: 'div',
+    attributes: {},
     children: [
       '\n      ',
       {
-        type: 'div',
-        props: {},
+        tag: 'div',
+        attributes: {},
         children: [],
       },
       '\n    ',

@@ -3,8 +3,40 @@
 const Parser = require('./parser');
 const PLACEHOLDER = {};
 
+const defaultActions = {
+  createRoot() {
+    return this.createNode('#document-fragment');
+  },
+  finishRoot(root) {
+    let c = root.children;
+    return c.length === 1 && typeof c[0] !== 'string' ? c[0] : root;
+  },
+  addChild(node, child) {
+    node.children.push(child);
+  },
+  addText(node, text) {
+    this.addChild(node, text);
+  },
+  createNode(tag) {
+    return { tag, attributes: {}, children: [] };
+  },
+  finishNode(node) {},
+  setAttribute(node, name, value) {
+    node.attributes[name] = value === undefined ? true : value;
+  },
+  setAttributes(node, map) {
+    for (let key in map) {
+      this.setAttribute(node, key, map[key]);
+    }
+  },
+  setAttributeParts(node, name, parts) {
+    this.setAttribute(node, name, parts.join(''));
+  },
+};
+
 function createCompiler(createElement, options = {}) {
-  const cache = options.cache;
+  let cache = options.cache;
+  let actions = options.actions || defaultActions;
 
   function TemplateResult(source, values) {
     this.source = source;
@@ -25,7 +57,9 @@ function createCompiler(createElement, options = {}) {
       }
       this.tokens = tokens;
     }
-    return compile(this.tokens, this.values, createElement, options);
+    let root = actions.createRoot();
+    walk(0, root, this.tokens, this.values, actions);
+    return actions.finishRoot(root);
   };
 
   return function htmlCompiler(literals, ...values) {
@@ -39,7 +73,7 @@ function tokenize(chunks) {
   for (let i = 0; i < chunks.length; i++) {
     parser.parseChunk(chunks[i]);
     if (i < chunks.length - 1) {
-      parser.pushValue(PLACEHOLDER);
+      parser.pushValue({ _placeholder: i });
     }
   }
   return trimWhitespace(parser.tokens);
@@ -63,111 +97,62 @@ function wsToken(t) {
   return t[0] === 'text' && typeof t[1] === 'string' && (!t[1] || !t[1].trim());
 }
 
-function compile(parts, values, createElement, options) {
-  let stack = [[]];
-  let hasElement = false;
-  let valueIndex = 0;
-  let index = 0;
-  let type;
+function getValue(token, values) {
+  let v = token[1];
+  return typeof v._placeholder === 'number' ? values[v._placeholder] : v;
+}
 
-  function peek() {
-    return index < parts.length ? parts[index][0] : '';
-  }
+function closingTag(tag) {
+  return typeof tag === 'string' && tag[0] === '/';
+}
 
-  function read() {
-    let value = undefined;
-    if (index < parts.length) {
-      value = parts[index++][1];
-      if (value === PLACEHOLDER) {
-        value = values[valueIndex++];
+function walk(i, node, tokens, values, actions) {
+  let attrKey = null;
+  for (; i < tokens.length; ++i) {
+    let t = tokens[i];
+    switch (t[0]) {
+      case 'tag-start': {
+        let tag = getValue(t, values);
+        if (closingTag(tag)) {
+          while (i < tokens.length && tokens[++i][0] !== 'tag-end'); // Skip attributes
+          return i;
+        }
+        let child = actions.createNode(tag);
+        i = walk(i + 1, child, tokens, values, actions);
+        actions.finishNode(child);
+        actions.addChild(node, child);
+        break;
       }
-    }
-    return value;
-  }
-
-  function pop() {
-    if (stack.length === 1) {
-      return;
-    }
-    let children = stack.pop();
-    let props = stack.pop();
-    let tag = stack.pop();
-    hasElement = true;
-    pushChild(createElement(tag, props, children));
-  }
-
-  function pushChild(c) {
-    stack[stack.length - 1].push(c);
-  }
-
-  function setProp(key, value, force) {
-    let props = stack[stack.length - 2];
-    if (force || !props[key]) {
-      props[key] = value;
-    }
-  }
-
-  while ((type = peek())) {
-    if (type === 'tag-start') {
-      let value = read();
-      if (typeof value === 'string' && value[0] === '/') {
-        while (peek() !== 'tag-end') {
-          read();
-        }
-        pop();
-      } else {
-        stack.push(value, {}, []);
-      }
-    } else if (type === 'attr-key') {
-      let value = read();
-      if (value && typeof value === 'object') {
-        for (let key in value) {
-          setProp(key, value[key], false);
-        }
-      } else {
-        let propKey = value;
-        let propValue = '';
-        let hasValue = false;
-        while (peek() === 'attr-value') {
-          value = read();
-          propValue = hasValue ? String(propValue) + value : value;
-          hasValue = true;
-        }
-        if (!hasValue) {
-          type = peek();
-          if (type === 'tag-end' || type === 'attr-key') {
-            propValue = true;
+      case 'tag-end':
+        if (t[1] === '/') { return i; }
+        break;
+      case 'text':
+        actions.addText(node, t[1]);
+        break;
+      case 'attr-map':
+        actions.setAttributes(node, getValue(t, values));
+        break;
+      case 'attr-key': {
+        let name = getValue(t, values);
+        switch (i + 1 < tokens.length ? tokens[i + 1][0] : '') {
+          case 'attr-value':
+            actions.setAttribute(node, name, getValue(tokens[++i], values));
+            break;
+          case 'attr-part': {
+            let parts = [getValue(tokens[++i], values)];
+            while (i + 1 < tokens.length && tokens[i + 1][0] === 'attr-part') {
+              parts.push(getValue(tokens[++i], values));
+            }
+            actions.setAttributeParts(node, name, parts);
+            break;
           }
-        }
-        if (propKey) {
-          setProp(propKey, propValue, true);
+          default:
+            actions.setAttribute(node, name, undefined);
+            break;
         }
       }
-    } else if (type === 'tag-end') {
-      if (read() === '/') {
-        pop();
-      }
-    } else if (type === 'text') {
-      pushChild(read());
-    } else {
-      throw new Error(`Unexpected token ${ type }`);
     }
   }
-
-  while (stack.length > 1) {
-    pop();
-  }
-
-  let children = stack[0];
-  if (hasElement && children.length === 1) {
-    return children[0];
-  }
-
-  if (options.createFragment) {
-    return options.createFragment(children);
-  }
-
-  throw new Error('HTML template must have exactly one root element');
 }
 
 module.exports = createCompiler;

@@ -8,6 +8,11 @@ const COMMENT = 11;
 
 const ESC_RE = /^\\(?:x([0-9a-fA-F]{2})|u([0-9a-fA-F]{4}))?/;
 
+function Token(type, value) {
+  this.type = type;
+  this.value = value;
+}
+
 function Parser() {
   this.tokens = [];
   this.state = TEXT;
@@ -17,7 +22,7 @@ function Parser() {
 Parser.prototype.parseChunk = function(chunk) {
   let state = this.state;
   let tokens = this.tokens;
-  let tag = this.tag;
+  let attrPart = (state === ATTR_VALUE_DQ || state === ATTR_VALUE_SQ);
   let a = 0;
   let b = 0;
 
@@ -34,8 +39,8 @@ Parser.prototype.parseChunk = function(chunk) {
   for (; b < chunk.length; ++b) {
     let c = chunk[b];
     if (state === RAW) {
-      if (c === '>' && rmatch(chunk, b, '</' + tag)) {
-        b -= tag.length + 3; // Rewind to closing tag
+      if (c === '>' && rmatch(chunk, b, '</' + this.tag)) {
+        b -= this.tag.length + 3; // Rewind to closing tag
         state = TEXT;
       }
     } else if (state === COMMENT) {
@@ -56,32 +61,34 @@ Parser.prototype.parseChunk = function(chunk) {
       }
     } else if (state === ATTR_VALUE_SQ) {
       if (c === "'") {
-        push('attr-value');
+        push(attrPart ? 'attr-part' : 'attr-value');
+        attrPart = false;
         move(ATTR);
       }
     } else if (state === ATTR_VALUE_DQ) {
       if (c === '"') {
-        push('attr-value');
+        push(attrPart ? 'attr-part' : 'attr-value');
+        attrPart = false;
         move(ATTR);
       }
     } else if (c === '>') {
       if (state === OPEN) {
-        push('tag-start', tag = chunk.slice(a, b));
+        push('tag-start', this.tag = chunk.slice(a, b));
       } else if (state === ATTR_KEY) {
         push('attr-key');
       } else if (state === ATTR_VALUE) {
         push('attr-value');
       }
-      if (rmatch(chunk, b, '/') && tag[0] !== '/') {
+      if (rmatch(chunk, b, '/') && this.tag[0] !== '/') {
         push('tag-end', '/');
         move(TEXT);
       } else {
         push('tag-end', '');
-        move(rawTag(tag) ? RAW : TEXT);
+        move(rawTag(this.tag) ? RAW : TEXT);
       }
     } else if (state === OPEN) {
       if (c === '-' && chunk.slice(a, b) === '!-') {
-        state = COMMENT; a = b + 1;
+        move(COMMENT);
       } else if (c === '/' && b === a) {
         // Allow leading slash
       } else if (!attrChar(c)) {
@@ -122,26 +129,30 @@ Parser.prototype.parseChunk = function(chunk) {
     }
   }
 
-  if (a < b) {
-    if (state === TEXT || state === RAW) {
+  if (state === TEXT || state === RAW) {
+    if (a < b) {
       push('text');
-    } else if (state === OPEN) {
+    }
+  } else if (state === OPEN) {
+    if (a < b) {
       push('tag-start');
       move(ATTR);
-    } else if (state === ATTR_KEY) {
-      push('attr-key');
-      move(ATTR);
-    } else if (
-      state === ATTR_VALUE ||
-      state === ATTR_VALUE_DQ ||
-      state === ATTR_VALUE_SQ
-    ) {
-      push('attr-value');
+    }
+  } else if (state === ATTR_KEY) {
+    push('attr-key');
+    move(ATTR);
+  } else if (state === ATTR_KEY_WS) {
+    move(ATTR);
+  } else if (state === ATTR_VALUE) {
+    push('attr-value');
+    move(ATTR);
+  } else if (state === ATTR_VALUE_SQ || state === ATTR_VALUE_DQ) {
+    if (a < b) {
+      push('attr-part');
     }
   }
 
   this.state = state;
-  this.tag = tag;
 };
 
 Parser.prototype.pushValue = function(value) {
@@ -159,18 +170,15 @@ Parser.prototype.pushValue = function(value) {
       state = ATTR;
       break;
     case ATTR:
-    case ATTR_KEY:
-    case ATTR_KEY_WS:
-      type = 'attr-key';
+      type = 'attr-map';
       break;
     case ATTR_VALUE_WS:
       type = 'attr-value';
       state = ATTR;
       break;
-    case ATTR_VALUE:
-    case ATTR_VALUE_DQ:
     case ATTR_VALUE_SQ:
-      type = 'attr-value';
+    case ATTR_VALUE_DQ:
+      type = 'attr-part';
       break;
   }
 
@@ -180,11 +188,6 @@ Parser.prototype.pushValue = function(value) {
 
   this.state = state;
 };
-
-function Token(type, value) {
-  this.type = type;
-  this.value = value;
-}
 
 function rmatch(s, end, t) {
   return end >= t.length && s.slice(end - t.length, end) === t;
