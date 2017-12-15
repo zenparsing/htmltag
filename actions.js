@@ -1,3 +1,5 @@
+'use strict';
+
 module.exports = {
   createRoot: function() {
     return this.createNode('#document-fragment');
@@ -10,13 +12,16 @@ module.exports = {
     return { tag, attributes: {}, children: [] };
   },
   finishNode: function(node) {
-    // Empty
+    return node;
   },
   addChild: function(node, child) {
     node.children.push(child);
   },
   addText: function(node, text) {
     this.addChild(node, text);
+  },
+  mapValue: function(v) {
+    return v;
   },
   setAttribute: function(node, name, value) {
     node.attributes[name] = value === undefined ? true : value;

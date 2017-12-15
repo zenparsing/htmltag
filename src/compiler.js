@@ -1,18 +1,18 @@
 'use strict';
 
 const Parser = require('./parser');
+const PLACEHOLDER = {};
 
-function createCompiler(actions, options) {
-  let cache = options && options.cache;
+function createCompiler(actions, options = {}) {
+  let cache = options.cache;
   return function htmlCompiler(literals, ...values) {
     let tokens = cache && cache.get(literals);
     if (!tokens) {
       tokens = tokenize(literals.raw);
       cache && cache.set(literals, tokens);
     }
-    // TODO: Defer - how?
     let result = new TemplateResult(tokens, values, actions);
-    return result.evaluate();
+    return options.defer ? result : result.evaluate();
   };
 }
 
@@ -27,50 +27,52 @@ TemplateResult.prototype.matches = function(other) {
 };
 
 TemplateResult.prototype.evaluate = function() {
-  let root = this.actions.createRoot();
-  walk(0, root, this.tokens, this.values, this.actions);
-  return this.actions.finishRoot(root);
+  let actions = this.actions;
+  let root = actions.createRoot();
+  walk(0, root, this.tokens, new Vals(this.values, actions), actions);
+  return actions.finishRoot(root);
 };
 
-function PlaceHolder(pos) {
-  this.pos = pos;
-}
-
 function tokenize(chunks) {
+  if (chunks.length === 0) {
+    return [];
+  }
   let parser = new Parser();
-  for (let i = 0; i < chunks.length; i++) {
+  parser.parseChunk(chunks[0]);
+  for (let i = 1; i < chunks.length; i++) {
+    parser.pushValue(PLACEHOLDER);
     parser.parseChunk(chunks[i]);
-    if (i < chunks.length - 1) {
-      parser.pushValue(new PlaceHolder(i));
-    }
   }
   return parser.end();
 }
 
-function getValue(token, values) {
-  let v = token[1];
-  return v instanceof PlaceHolder ? values[v.pos] : v;
+function Vals(values, actions) {
+  this.index = 0;
+  this.values = values;
+  this.actions = actions;
 }
 
-function closingTag(tag) {
-  return typeof tag === 'string' && tag[0] === '/';
-}
+Vals.prototype.read = function(t) {
+  if (t[1] === PLACEHOLDER) {
+    return this.actions.mapValue(this.values[this.index++]);
+  }
+  return t[1];
+};
 
-function walk(i, node, tokens, values, actions) {
+function walk(i, node, tokens, vals, actions) {
   let attrKey = null;
   for (; i < tokens.length; ++i) {
     let t = tokens[i];
     switch (t[0]) {
       case 'tag-start': {
-        let tag = getValue(t, values);
-        if (closingTag(tag)) {
+        let tag = vals.read(t);
+        if (typeof tag === 'string' && tag[0] === '/') { // Closing tag
           while (i < tokens.length && tokens[++i][0] !== 'tag-end'); // Skip attributes
           return i;
         }
         let child = actions.createNode(tag);
-        i = walk(i + 1, child, tokens, values, actions);
-        actions.finishNode(child);
-        actions.addChild(node, child);
+        i = walk(i + 1, child, tokens, vals, actions);
+        actions.addChild(node, actions.finishNode(child));
         break;
       }
       case 'tag-end':
@@ -80,18 +82,18 @@ function walk(i, node, tokens, values, actions) {
         actions.addText(node, t[1]);
         break;
       case 'attr-map':
-        actions.setAttributes(node, getValue(t, values));
+        actions.setAttributes(node, vals.read(t));
         break;
       case 'attr-key': {
-        let name = getValue(t, values);
+        let name = vals.read(t);
         switch (i + 1 < tokens.length ? tokens[i + 1][0] : '') {
           case 'attr-value':
-            actions.setAttribute(node, name, getValue(tokens[++i], values));
+            actions.setAttribute(node, name, vals.read(tokens[++i]));
             break;
           case 'attr-part': {
-            let parts = [getValue(tokens[++i], values)];
+            let parts = [vals.read(tokens[++i])];
             while (i + 1 < tokens.length && tokens[i + 1][0] === 'attr-part') {
-              parts.push(getValue(tokens[++i], values));
+              parts.push(vals.read(tokens[++i]));
             }
             actions.setAttributeParts(node, name, parts);
             break;
