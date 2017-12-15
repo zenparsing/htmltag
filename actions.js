@@ -7,7 +7,7 @@ module.exports = {
     return c.length === 1 && typeof c[0] !== 'string' ? c[0] : root;
   },
   createNode: function(tag) {
-    return { tag, attributes: Object.create(null), children: [] };
+    return { tag, attributes: {}, children: [] };
   },
   finishNode: function(node) {
     // Empty
