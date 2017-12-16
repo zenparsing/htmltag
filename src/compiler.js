@@ -19,11 +19,8 @@ function createCompiler(options = {}) {
 function TemplateResult(tokens, values) {
   this.tokens = tokens;
   this.values = values;
+  this.source = tokens;
 }
-
-TemplateResult.prototype.matches = function(other) {
-  return this.tokens === other.tokens;
-};
 
 TemplateResult.prototype.evaluate = function(actions) {
   let root = actions.createRoot();
@@ -77,7 +74,7 @@ function walk(i, node, tokens, vals, actions) {
         if (t[1] === '/') { return i; }
         break;
       case 'text':
-        actions.addText(node, t[1]);
+        actions.addChild(node, vals.read(t));
         break;
       case 'attr-map':
         actions.setAttributes(node, vals.read(t));

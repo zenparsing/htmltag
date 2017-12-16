@@ -17,9 +17,6 @@ module.exports = {
   addChild: function(node, child) {
     node.children.push(child);
   },
-  addText: function(node, text) {
-    this.addChild(node, text);
-  },
   mapValue: function(v) {
     return v;
   },
