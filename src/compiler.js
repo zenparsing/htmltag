@@ -23,7 +23,7 @@ function TemplateResult(tokens, values) {
 }
 
 TemplateResult.prototype.evaluate = function(actions) {
-  let root = actions.createRoot();
+  let root = actions.createRoot(this);
   walk(0, root, this.tokens, new Vals(this.values, actions), actions);
   return actions.finishRoot(root);
 };
@@ -94,7 +94,7 @@ function walk(i, node, tokens, vals, actions) {
             break;
           }
           default:
-            actions.setAttribute(node, name, undefined);
+            actions.setAttribute(node, name, true);
             break;
         }
       }

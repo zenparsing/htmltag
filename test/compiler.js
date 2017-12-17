@@ -169,3 +169,11 @@ const html = createCompiler({ actions });
     ],
   });
 }
+
+{ // Flag attributes
+  assert.deepEqual(html`<div a />`, {
+    tag: 'div',
+    attributes: { a: true },
+    children: [],
+  });
+}
