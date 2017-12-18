@@ -2,7 +2,7 @@
 
 const createCompiler = require('../src/compiler');
 const largeDocument = require('./large-doc');
-const actions = require('../actions');
+const actions = require('../tree-builder');
 
 let html = createCompiler({ actions });
 let htmlWithCache = createCompiler({ actions, cache: new WeakMap() });

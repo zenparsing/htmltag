@@ -13,11 +13,10 @@ npm install htmltag
 Use `htmltag` to create Javascript [template literal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals) tags that parse HTML.
 
 ```js
-const htmlTag = require('htmltag');
+const htmltag = require('htmltag');
+const actions = require('htmltag/tree-builder');
 
-const html = htmlTag((tag, props, children) => {
-  return { tag, props, children };
-});
+const html = htmltag({ actions });
 
 const someText = 'Hello world';
 
@@ -27,19 +26,39 @@ const tree = html`
 
 console.log(tree);
 
-// { tag: 'div', props: {}, children: [ 'Hello world' ] }
+// { tag: 'div', attributes: {}, children: [ 'Hello world' ] }
 ```
 
 ## API
 
-### htmlTag(createElement[, options])
+### htmlTag([options])
 
-Returns a template literal tag function that parses HTML. The `createElement` function is called with the following parameters:
+Returns a template literal tag function that parses HTML. The following options are supported:
 
-- `tag`: The tag name of the node. This value is not limited to strings; it may be of any type.
-- `props`: An object containing the attributes of the element.
-- `children`: An array containing the element's children. Children can be of any type.
+- `actions`: An *TemplateActions* object. If this option is specified then the template tag will return the result of executing the specified actions. If this option is not specified then the template tag will return *TemplateResult* objects.
+- `cache`: A optional *Map* or *WeakMap* object that will used to cache parsed HTML. If this option is not specified then no caching will occur.
 
-The following options are supported:
+### htmltag.isTemplateResult(obj)
 
-- `createFragment`: A function that is called with an array of children when the parsed HTML does not have a single root element. If this option is not specified, the returned function will throw an error if the parsed HTML does not have a single root element.
+Returns `true` if the specified argument is a TemplateResult object.
+
+### TemplateResult objects
+
+*TemplateResult* objects contain both the static and dynamic parts of a template and can be evaluated using *TemplateActions*.
+
+- `source`: An opaque object representing the static content of the template.
+- `evaluate(actions)`: Evaluates the HTML tree using the specified *TemplateActions* object.
+
+### TemplateActions interface
+
+*TemplateActions* objects are used to evaluate HTML trees and must have the following callback methods:
+
+- `createRoot()`: Returns a root node for the resulting tree
+- `createNode(tag, parent)`: Returns a node for the specified tag
+- `mapValue(value)`: Maps the specified template input value to some other value
+- `setAttribute(node, name, value)`: Sets a node attribute
+- `setAttributes(node, attributes)`: Sets a collection of node attributes
+- `setAttributeParts(node, name, parts)`: Sets a node attribute by concatenating multiple values
+- `addChild(node, child)`: Adds a child to a node
+- `finishNode(node)`: Called when the node is complete
+- `finishRoot(root)`: Returns the result of template evaluation

@@ -9,6 +9,7 @@ function createCompiler(options = {}) {
     let tokens = cache && cache.get(literals);
     if (!tokens) {
       tokens = tokenize(literals.raw);
+      tokens.source = {};
       cache && cache.set(literals, tokens);
     }
     let result = new TemplateResult(tokens, values);
@@ -23,7 +24,7 @@ createCompiler.isTemplateResult = function(obj) {
 function TemplateResult(tokens, values) {
   this.tokens = tokens;
   this.values = values;
-  this.source = tokens;
+  this.source = tokens.source;
 }
 
 TemplateResult.prototype.evaluate = function(actions) {

@@ -2,7 +2,7 @@
 
 const createCompiler = require('../src/compiler');
 const assert = require('assert');
-const actions = require('../actions');
+const actions = require('../tree-builder');
 
 const html = createCompiler({ actions });
 

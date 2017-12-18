@@ -2,7 +2,7 @@
 
 const createCompiler = require('../src/compiler');
 const assert = require('assert');
-const baseActions = require('../actions');
+const baseActions = require('../tree-builder');
 
 const registry = new Map();
 
