@@ -8,11 +8,6 @@ const COMMENT = 11;
 
 const ESC_RE = /^\\(?:x([0-9a-fA-F]{2})|u([0-9a-fA-F]{4}))?/;
 
-function Token(type, value) {
-  this.type = type;
-  this.value = value;
-}
-
 function Parser() {
   this.tokens = [];
   this.state = TEXT;

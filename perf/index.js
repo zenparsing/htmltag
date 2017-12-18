@@ -1,6 +1,6 @@
 'use strict';
 
-const createCompiler = require('../src');
+const createCompiler = require('../src/compiler');
 const largeDocument = require('./large-doc');
 const actions = require('../actions');
 

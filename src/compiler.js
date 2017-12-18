@@ -16,6 +16,10 @@ function createCompiler(options = {}) {
   };
 }
 
+createCompiler.isTemplateResult = function(obj) {
+  return obj instanceof TemplateResult;
+};
+
 function TemplateResult(tokens, values) {
   this.tokens = tokens;
   this.values = values;
@@ -23,7 +27,7 @@ function TemplateResult(tokens, values) {
 }
 
 TemplateResult.prototype.evaluate = function(actions) {
-  let root = actions.createRoot(this);
+  let root = actions.createRoot();
   walk(0, root, this.tokens, new Vals(this.values, actions), actions);
   return actions.finishRoot(root);
 };
@@ -55,7 +59,6 @@ Vals.prototype.read = function(t) {
 };
 
 function walk(i, node, tokens, vals, actions) {
-  let attrKey = null;
   for (; i < tokens.length; ++i) {
     let t = tokens[i];
     switch (t[0]) {

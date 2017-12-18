@@ -1,6 +1,6 @@
 'use strict';
 
-const createCompiler = require('../src');
+const createCompiler = require('../src/compiler');
 const assert = require('assert');
 const baseActions = require('../actions');
 

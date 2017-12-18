@@ -15,10 +15,11 @@
   ],
   "homepage": "https://github.com/zenparsing/htmltag",
   "devDependencies": {
-    "esdown": "^1.2.5"
+    "babel-cli": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1"
   },
   "scripts": {
     "prepublishOnly": "npm run build",
-    "build": "esdown - src/index.js dist/index.js -b"
+    "build": "babel src --out-dir dist --presets=es2015"
   }
 }
