@@ -1,34 +1,34 @@
 'use strict';
 
 module.exports = {
-  createRoot: function() {
+  createRoot() {
     return this.createNode('#document-fragment');
   },
-  finishRoot: function(root) {
+  finishRoot(root) {
     let c = root.children;
     return c.length === 1 && typeof c[0] !== 'string' ? c[0] : root;
   },
-  createNode: function(tag) {
+  createNode(tag) {
     return { tag, attributes: {}, children: [] };
   },
-  finishNode: function(node) {
+  finishNode(node) {
     return node;
   },
-  addChild: function(node, child) {
+  addChild(node, child) {
     node.children.push(child);
   },
-  mapValue: function(v) {
+  mapValue(v) {
     return v;
   },
-  setAttribute: function(node, name, value) {
+  setAttribute(node, name, value) {
     node.attributes[name] = value === undefined ? true : value;
   },
-  setAttributes: function(node, map) {
+  setAttributes(node, map) {
     for (let key in map) {
       this.setAttribute(node, key, map[key]);
     }
   },
-  setAttributeParts: function(node, name, parts) {
+  setAttributeParts(node, name, parts) {
     this.setAttribute(node, name, parts.join(''));
   },
 };

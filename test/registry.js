@@ -1,8 +1,8 @@
 'use strict';
 
-const createCompiler = require('../src/compiler');
 const assert = require('assert');
-const baseActions = require('../tree-builder');
+const createCompiler = require('../src/compiler');
+const baseActions = require('../src/tree-builder');
 
 const registry = new Map();
 

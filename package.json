@@ -1,6 +1,6 @@
 {
   "name": "htmltag",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "HTML template tag compiler",
   "license": "MIT",
   "repository": {
@@ -20,6 +20,6 @@
   },
   "scripts": {
     "prepublishOnly": "npm run build",
-    "build": "babel src --out-dir dist --presets=es2015"
+    "build": "babel src --out-dir lib --presets=es2015"
   }
 }

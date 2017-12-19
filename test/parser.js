@@ -1,7 +1,7 @@
 'use strict';
 
-const Parser = require('../src/parser');
 const assert = require('assert');
+const Parser = require('../src/parser');
 
 { // Tags and attributes
   let parser = new Parser();

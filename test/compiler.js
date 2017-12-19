@@ -1,8 +1,8 @@
 'use strict';
 
-const createCompiler = require('../src/compiler');
 const assert = require('assert');
-const actions = require('../tree-builder');
+const createCompiler = require('../src/compiler');
+const actions = require('../src/tree-builder');
 
 const html = createCompiler({ actions });
 
