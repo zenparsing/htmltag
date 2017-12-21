@@ -17,6 +17,9 @@ module.exports = {
   addChild(node, child) {
     node.children.push(child);
   },
+  addComment(node, value) {
+    node.children.push({ comment: value });
+  },
   mapValue(v) {
     return v;
   },

@@ -40,6 +40,9 @@ Parser.prototype.parseChunk = function(chunk) {
       }
     } else if (state === COMMENT) {
       if (c === '>' && rmatch(chunk, b, '--')) {
+        if (b - 2 > a) {
+          push('comment', chunk.slice(a, b - 2));
+        }
         move(TEXT);
       }
     } else if (c === '\\') {
@@ -128,6 +131,10 @@ Parser.prototype.parseChunk = function(chunk) {
     if (a < b) {
       push('text');
     }
+  } else if (state === COMMENT) {
+    if (a < b) {
+      push('comment');
+    }
   } else if (state === OPEN) {
     if (a < b) {
       push('tag-start');
@@ -159,6 +166,9 @@ Parser.prototype.pushValue = function(value) {
     case TEXT:
     case RAW:
       type = 'text';
+      break;
+    case COMMENT:
+      type = 'comment'
       break;
     case OPEN:
       type = 'tag-start';

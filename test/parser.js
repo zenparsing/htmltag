@@ -46,12 +46,24 @@ const Parser = require('../src/parser');
 
 { // Comments are excluded
   let parser = new Parser();
-  parser.parseChunk('<!--comment-->');
-  assert.deepEqual(parser.tokens, []);
+  parser.parseChunk('<!--test-->');
+  assert.deepEqual(parser.tokens, [['comment', 'test']]);
+  parser = new Parser();
   parser.parseChunk('<!--');
   parser.parseChunk('hidden');
   parser.parseChunk('-->');
-  assert.deepEqual(parser.tokens, []);
+  assert.deepEqual(parser.tokens, [['comment', 'hidden']]);
+  parser = new Parser();
+  parser.parseChunk('<!--a');
+  parser.pushValue('b');
+  parser.parseChunk('c');
+  parser.parseChunk('d-->');
+  assert.deepEqual(parser.tokens, [
+    ['comment', 'a'],
+    ['comment', 'b'],
+    ['comment', 'c'],
+    ['comment', 'd'],
+  ]);
 }
 
 { // Strange tag name with !--

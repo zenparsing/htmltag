@@ -80,6 +80,9 @@ function walk(i, node, tokens, vals, actions) {
       case 'text':
         actions.addChild(node, vals.read(t));
         break;
+      case 'comment':
+        actions.addComment(node, vals.read(t));
+        break;
       case 'attr-map':
         actions.setAttributes(node, vals.read(t));
         break;

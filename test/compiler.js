@@ -177,3 +177,18 @@ const html = createCompiler({ actions });
     children: [],
   });
 }
+
+{ // Comments
+  assert.deepEqual(html`<div><!-- ${ 1 } ${ 2 } -->${ 3 }</div>`, {
+    tag: 'div',
+    attributes: {},
+    children: [
+      { comment: ' ' },
+      { comment: 1 },
+      { comment: ' ' },
+      { comment: 2 },
+      { comment: ' ' },
+      3,
+    ],
+  });
+}
