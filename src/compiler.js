@@ -53,7 +53,7 @@ function Vals(values, actions) {
 }
 
 Vals.prototype.read = function(t) {
-  if (t[1] === PLACEHOLDER) {
+  if (typeof t[1] !== 'string') {
     return this.actions.mapValue(this.values[this.index++]);
   }
   return t[1];
