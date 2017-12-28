@@ -1,6 +1,6 @@
 {
   "name": "htmltag",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "HTML template tag compiler",
   "license": "MIT",
   "repository": {

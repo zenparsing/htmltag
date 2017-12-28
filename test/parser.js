@@ -44,7 +44,7 @@ const Parser = require('../src/parser');
   ]);
 }
 
-{ // Comments are excluded
+{ // Comments
   let parser = new Parser();
   parser.parseChunk('<!--test-->');
   assert.deepEqual(parser.tokens, [['comment', 'test']]);
@@ -289,5 +289,34 @@ const Parser = require('../src/parser');
     ['tag-start', 'x'],
     ['attr-map', 'map'],
     ['tag-end', '/'],
+  ]);
+}
+
+{ // Strange self-closing bug
+  let parser = new Parser();
+  parser.parseChunk(`
+    <path></path>
+    <path id='r2'>
+      <animate />
+    </path>
+  `);
+  assert.deepEqual(parser.tokens, [
+    ['text', '\n    '],
+    ['tag-start', 'path'],
+    ['tag-end', ''],
+    ['tag-start', '/path'],
+    ['tag-end', ''],
+    ['text', '\n    '],
+    ['tag-start', 'path'],
+    ['attr-key', 'id'],
+    ['attr-value', 'r2'],
+    ['tag-end', ''],
+    ['text', '\n      '],
+    ['tag-start', 'animate'],
+    ['tag-end', '/'],
+    ['text', '\n    '],
+    ['tag-start', '/path'],
+    ['tag-end', ''],
+    ['text', '\n  ']
   ]);
 }

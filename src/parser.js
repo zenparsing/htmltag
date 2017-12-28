@@ -27,8 +27,12 @@ Parser.prototype.parseChunk = function(chunk) {
   }
 
   function push(type, value) {
-    tokens.push([type, value === undefined ? chunk.slice(a, b) : value]);
+    if (value === undefined) {
+      value = chunk.slice(a, b);
+    }
+    tokens.push([type, value]);
     a = b;
+    return value;
   }
 
   for (; b < chunk.length; ++b) {
@@ -71,7 +75,7 @@ Parser.prototype.parseChunk = function(chunk) {
       }
     } else if (c === '>') {
       if (state === OPEN) {
-        push('tag-start', this.tag = chunk.slice(a, b));
+        this.tag = push('tag-start');
       } else if (state === ATTR_KEY) {
         push('attr-key');
       } else if (state === ATTR_VALUE) {
@@ -90,7 +94,7 @@ Parser.prototype.parseChunk = function(chunk) {
       } else if (c === '/' && b === a) {
         // Allow leading slash
       } else if (!attrChar(c)) {
-        push('tag-start');
+        this.tag = push('tag-start');
         move(ATTR);
       }
     } else if (state === ATTR) {
@@ -137,7 +141,7 @@ Parser.prototype.parseChunk = function(chunk) {
     }
   } else if (state === OPEN) {
     if (a < b) {
-      push('tag-start');
+      this.tag = push('tag-start');
       move(ATTR);
     }
   } else if (state === ATTR_KEY) {
@@ -172,6 +176,7 @@ Parser.prototype.pushValue = function(value) {
       break;
     case OPEN:
       type = 'tag-start';
+      this.tag = value;
       state = ATTR;
       break;
     case ATTR:
