@@ -1,24 +1,24 @@
 'use strict';
 
-const createCompiler = require('../src/compiler');
+const { createTag, TemplateResult } = require('../src');
 const largeDocument = require('./large-doc');
 const actions = require('../src/tree-builder');
 
-let html = createCompiler({ actions });
-let htmlWithCache = createCompiler({ actions, cache: new WeakMap() });
+const html = createTag(actions);
 
 function time(name, count, fn) {
   let start = Date.now();
   for (let i = 0; i < count; ++i) {
     fn(i);
   }
-  console.log(`${name}: ${Date.now() - start}ms`);
+  console.log(`${name}  ${(Date.now() - start) / count}ms`);
 }
 
-time('Large document compile', 10, i => {
+time('Large document compile (10, no cache)', 10, i => {
   largeDocument(html);
+  TemplateResult.cache = new WeakMap();
 });
 
-time('Large document compile (cached)', 10, i => {
-  largeDocument(htmlWithCache);
+time('Large document compile (100, cache)  ', 100, i => {
+  largeDocument(html);
 });

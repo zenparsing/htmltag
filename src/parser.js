@@ -172,7 +172,7 @@ Parser.prototype.pushValue = function(value) {
       type = 'text';
       break;
     case COMMENT:
-      type = 'comment'
+      type = 'comment';
       break;
     case OPEN:
       type = 'tag-start';

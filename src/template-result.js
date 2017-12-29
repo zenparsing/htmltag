@@ -3,34 +3,38 @@
 const Parser = require('./parser');
 const PLACEHOLDER = {};
 
-function createCompiler(options = {}) {
-  let cache = options.cache;
-  return function htmlCompiler(literals, ...values) {
-    let tokens = cache && cache.get(literals);
-    if (!tokens) {
-      tokens = tokenize(literals.raw);
-      tokens.source = {};
-      cache && cache.set(literals, tokens);
-    }
-    let result = new TemplateResult(tokens, values);
-    return options.actions ? result.evaluate(options.actions) : result;
-  };
-}
-
-createCompiler.isTemplateResult = function(obj) {
-  return obj instanceof TemplateResult;
-};
-
-function TemplateResult(tokens, values) {
-  this.tokens = tokens;
-  this.values = values;
+function TemplateResult(callsite, values) {
+  let tokens = TemplateResult.cache.get(callsite);
+  if (!tokens) {
+    tokens = tokenize(callsite.raw);
+    tokens.source = {};
+    TemplateResult.cache.set(callsite, tokens);
+  }
+  this._tokens = tokens;
   this.source = tokens.source;
+  this.values = values;
+  this.key = '';
 }
+
+TemplateResult.cache = new WeakMap();
 
 TemplateResult.prototype.evaluate = function(actions) {
   let root = actions.createRoot();
-  walk(0, root, this.tokens, new Vals(this.values, actions), actions);
+  walk(0, root, this._tokens, new Vals(this.values, actions), actions);
   return actions.finishRoot(root);
+};
+
+function Vals(values, actions) {
+  this.index = 0;
+  this.values = values;
+  this.actions = actions;
+}
+
+Vals.prototype.read = function(t) {
+  if (typeof t[1] !== 'string') {
+    return this.actions.mapValue(this.values[this.index++]);
+  }
+  return t[1];
 };
 
 function tokenize(chunks) {
@@ -45,19 +49,6 @@ function tokenize(chunks) {
   }
   return parser.end();
 }
-
-function Vals(values, actions) {
-  this.index = 0;
-  this.values = values;
-  this.actions = actions;
-}
-
-Vals.prototype.read = function(t) {
-  if (typeof t[1] !== 'string') {
-    return this.actions.mapValue(this.values[this.index++]);
-  }
-  return t[1];
-};
 
 function walk(i, node, tokens, vals, actions) {
   for (; i < tokens.length; ++i) {
@@ -78,10 +69,10 @@ function walk(i, node, tokens, vals, actions) {
         if (t[1] === '/') { return i; }
         break;
       case 'text':
-        actions.addChild(node, vals.read(t));
+        actions.addChild(node, actions.createText(vals.read(t), node));
         break;
       case 'comment':
-        actions.addComment(node, vals.read(t));
+        actions.addChild(node, actions.createComment(vals.read(t), node));
         break;
       case 'attr-map':
         actions.setAttributes(node, vals.read(t));
@@ -109,4 +100,4 @@ function walk(i, node, tokens, vals, actions) {
   }
 }
 
-module.exports = createCompiler;
+module.exports = TemplateResult;

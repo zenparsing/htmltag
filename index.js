@@ -1,1 +1,1 @@
-module.exports = require('./lib/compiler');
+module.exports = require('./lib/index');

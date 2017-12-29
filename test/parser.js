@@ -317,6 +317,6 @@ const Parser = require('../src/parser');
     ['text', '\n    '],
     ['tag-start', '/path'],
     ['tag-end', ''],
-    ['text', '\n  ']
+    ['text', '\n  '],
   ]);
 }

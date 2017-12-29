@@ -1,10 +1,10 @@
 'use strict';
 
 const assert = require('assert');
-const createCompiler = require('../src/compiler');
+const { createTag } = require('../src');
 const actions = require('../src/tree-builder');
 
-const html = createCompiler({ actions });
+const html = createTag(actions);
 
 { // Attributes
   assert.deepEqual(html`

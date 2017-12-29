@@ -1,7 +1,7 @@
 'use strict';
 
 const assert = require('assert');
-const createCompiler = require('../src/compiler');
+const { createTag } = require('../src');
 const baseActions = require('../src/tree-builder');
 
 const registry = new Map();
@@ -16,7 +16,7 @@ const actions = Object.assign(Object.create(baseActions), {
   },
 });
 
-const html = createCompiler({ actions });
+const html = createTag(actions);
 
 {
   function Custom() {}
