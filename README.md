@@ -46,8 +46,6 @@ console.log(
 
 `TemplateResult` objects contain both the static and dynamic parts of a template and can be evaluated using `TemplateActions`.
 
-Example: Evaluating a `TemplateResult` with a tree builder.
-
 ```js
 import { html } from 'htmltag';
 import { treeBuilder } from 'htmltag/extras';
@@ -59,11 +57,9 @@ console.log(
 );
 ```
 
-#### templateResult.values
+### templateResult.values
 
 An array of values supplied to the template literal instance.
-
-Example: Inspecting the values supplied to the template literal.
 
 ```js
 import { html } from 'htmltag';
@@ -74,7 +70,7 @@ const templateResult = html`<div>Hello${planet}</div>`;
 console.log(templateResult.values[0]); // 'Earth'
 ```
 
-#### templateResult.source
+### templateResult.source
 
 An opaque object identifying the template callsite. This value will be identical for identical template literals.
 
@@ -91,11 +87,9 @@ const result2 = render(2);
 console.log(result1.source === result2.source); // true
 ```
 
-#### templateResult.evaluate(templateActions)
+### templateResult.evaluate(templateActions)
 
 Evaluates the template result using the specified `TemplateActions` object.
-
-Example: Evaluating a `TemplateResult` with custom actions.
 
 ```js
 import { html } from 'htmltag';
