@@ -1,6 +1,6 @@
 # htmltag
 
-An HTML parser for creating Javascript [template literal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals) literal tags.
+An HTML parser for creating Javascript [template literal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals) tags.
 
 ## Install
 
