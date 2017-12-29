@@ -59,7 +59,7 @@ console.log(
 );
 ```
 
-### templateResult.values
+#### templateResult.values
 
 An array of values supplied to the template literal instance.
 
@@ -74,7 +74,7 @@ const templateResult = html`<div>Hello${planet}</div>`;
 console.log(templateResult.values[0]); // 'Earth'
 ```
 
-### templateResult.source
+#### templateResult.source
 
 An opaque object identifying the template callsite. This value will be identical for identical template literals.
 
