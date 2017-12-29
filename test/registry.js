@@ -11,7 +11,7 @@ function register(props) {
 }
 
 const actions = Object.assign(Object.create(baseActions), {
-  createNode(tag) {
+  createElement(tag) {
     return { tag: registry.get(tag) || tag, attributes: {}, children: [] };
   },
 });

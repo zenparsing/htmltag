@@ -2,25 +2,22 @@
 
 module.exports = {
   createRoot: function() {
-    return this.createNode('#document-fragment');
+    return this.createElement('#document-fragment');
   },
   finishRoot: function(root) {
     let c = root.children;
     return c.length === 1 && typeof c[0] !== 'string' ? c[0] : root;
   },
-  createNode: function(tag) {
+  createElement: function(tag) {
     return { tag, attributes: {}, children: [] };
   },
-  createText: function(text) {
-    return text;
+  finishElement: function(node) {
+    return node;
   },
   createComment: function(text) {
     return { comment: text };
   },
-  finishNode: function(node) {
-    return node;
-  },
-  addChild: function(node, child) {
+  appendChild: function(node, child) {
     node.children.push(child);
   },
   mapValue: function(v) {

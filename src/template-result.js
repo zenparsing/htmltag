@@ -60,19 +60,19 @@ function walk(i, node, tokens, vals, actions) {
           while (i < tokens.length && tokens[++i][0] !== 'tag-end'); // Skip attributes
           return i;
         }
-        let child = actions.createNode(tag, node);
+        let child = actions.createElement(tag, node);
         i = walk(i + 1, child, tokens, vals, actions);
-        actions.addChild(node, actions.finishNode(child));
+        actions.appendChild(node, actions.finishElement(child));
         break;
       }
       case 'tag-end':
         if (t[1] === '/') { return i; }
         break;
       case 'text':
-        actions.addChild(node, actions.createText(vals.read(t), node));
+        actions.appendChild(node, vals.read(t));
         break;
       case 'comment':
-        actions.addChild(node, actions.createComment(vals.read(t), node));
+        actions.appendChild(node, actions.createComment(vals.read(t), node));
         break;
       case 'attr-map':
         actions.setAttributes(node, vals.read(t));

@@ -113,46 +113,49 @@ console.log(
 
 `TemplateActions` objects are used to evaluate HTML trees and must have each of the following callback methods:
 
-#### templateActions.createRoot()
+```js
 
-Returns a root not for the resulting tree.
+class CustomActions {
 
-#### templateActions.createNode(tag, parent)
+  createRoot() {
+    // Creates a root code for the resulting tree
+  }
 
-Returns a node for the resulting tree.
+  createElement(tag, parent) {
+    // Creates an element node
+  }
 
-#### templateActions.createComment(value, parent)
+  createComment(value, parent) {
+    // Creates a comment node
+  }
 
-Returns a comment node.
+  mapValue(input) {
+    // Maps the specified template input value to some other value
+  }
 
-#### templateActions.createText(text, parent)
+  setAttribute(node, name, value) {
+    // Sets a node attribute
+  }
 
-Returns a text node.
+  setAttributes(node, attributes) {
+    // Sets a collection of node attributes
+  }
 
-#### templateActions.mapValue(value)
+  setAttributeParts(node, name, parts) {
+    // Sets a node attribute by concatenating multiple values
+  }
 
-Maps the specified template input value to some other value.
+  appendChild(node, child) {
+    // Adds a child to a node
+  }
 
-#### templateActions.setAttribute(node, name, value)
+  finishElement(node) {
+    // Called when the element is complete
+  }
 
-Sets a node attribute.
+  finishRoot(root) {
+    // Returns the result of template evaluation
+  }
 
-#### templateActions.setAttributes(node, attributes)
-
-Sets a collection of node attributes.
-
-#### templateActions.setAttributeParts(node, name, parts)
-
-Sets a node attribute by concatenating multiple values.
-
-#### templateActions.addChild(node, child)
-
-Adds a child to a node.
-
-#### templateActions.finishNode(node)
-
-Called when the node is complete.
-
-#### templateActions.finishRoot(root)
-
-Returns the result of template evaluation.
+}
+```
