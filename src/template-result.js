@@ -1,7 +1,8 @@
 'use strict';
 
 const Parser = require('./parser');
-const PLACEHOLDER = {};
+const placeholder = {};
+const $tokens = typeof Symbol === 'function' ? Symbol('tokens') : '$tokens';
 
 function TemplateResult(callsite, values) {
   let tokens = TemplateResult.cache.get(callsite);
@@ -10,17 +11,16 @@ function TemplateResult(callsite, values) {
     tokens.source = {};
     TemplateResult.cache.set(callsite, tokens);
   }
-  this._tokens = tokens;
+  this[$tokens] = tokens;
   this.source = tokens.source;
   this.values = values;
-  this.key = '';
 }
 
 TemplateResult.cache = new WeakMap();
 
 TemplateResult.prototype.evaluate = function(actions) {
   let root = actions.createRoot();
-  walk(0, root, this._tokens, new Vals(this.values, actions), actions);
+  walk(0, root, this[$tokens], new Vals(this.values, actions), actions);
   return actions.finishRoot(root);
 };
 
@@ -31,7 +31,7 @@ function Vals(values, actions) {
 }
 
 Vals.prototype.read = function(t) {
-  if (typeof t[1] !== 'string') {
+  if (t[1] === placeholder) {
     return this.actions.mapValue(this.values[this.index++]);
   }
   return t[1];
@@ -44,7 +44,7 @@ function tokenize(chunks) {
   let parser = new Parser();
   parser.parseChunk(chunks[0]);
   for (let i = 1; i < chunks.length; i++) {
-    parser.pushValue(PLACEHOLDER);
+    parser.pushValue(placeholder);
     parser.parseChunk(chunks[i]);
   }
   return parser.end();

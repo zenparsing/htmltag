@@ -14,11 +14,11 @@ function time(name, count, fn) {
   console.log(`${name}  ${(Date.now() - start) / count}ms`);
 }
 
-time('Large document compile (10, no cache)', 10, i => {
+time('Large document compile (100, no cache)', 10, i => {
   largeDocument(html);
   TemplateResult.cache = new WeakMap();
 });
 
-time('Large document compile (100, cache)  ', 100, i => {
+time('Large document compile (1000, cache)  ', 100, i => {
   largeDocument(html);
 });
