@@ -16,8 +16,13 @@ function TemplateResult(callsite, values) {
   this.values = values;
 }
 
-// TODO: WeakMap does not work with frozen keys in IE11
-TemplateResult.cache = new WeakMap();
+const hasWeakMap = (() => {
+  // WeakMap does not work with frozen keys in IE11
+  let f = Object.freeze({});
+  return Boolean(new WeakMap().set(f, 1).get(f));
+})();
+
+TemplateResult.cache = hasWeakMap ? new WeakMap() : new Map();
 
 TemplateResult.prototype.evaluate = function(actions) {
   let root = actions.createRoot();
