@@ -16,6 +16,7 @@ function TemplateResult(callsite, values) {
   this.values = values;
 }
 
+// TODO: WeakMap does not work with frozen keys in IE11
 TemplateResult.cache = new WeakMap();
 
 TemplateResult.prototype.evaluate = function(actions) {
