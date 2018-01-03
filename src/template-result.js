@@ -16,11 +16,10 @@ function TemplateResult(callsite, values) {
   this.values = values;
 }
 
-const hasWeakMap = (() => {
-  // WeakMap does not work with frozen keys in IE11
-  let f = Object.freeze({});
-  return Boolean(new WeakMap().set(f, 1).get(f));
-})();
+// IE11's WeakMap implementation is incorrect
+let hasWeakMap = true;
+try { new WeakMap().set({}, 1).get({}); }
+catch (e) { hasWeakMap = false }
 
 TemplateResult.cache = hasWeakMap ? new WeakMap() : new Map();
 
