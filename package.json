@@ -1,6 +1,6 @@
 {
   "name": "htmltag",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "HTML template tag compiler",
   "license": "MIT",
   "repository": {
@@ -16,10 +16,11 @@
   "homepage": "https://github.com/zenparsing/htmltag",
   "devDependencies": {
     "babel-cli": "^6.26.0",
-    "babel-preset-es2015": "^6.24.1"
+    "babel-preset-es2015": "^6.24.1",
+    "eslint": "^4.15.0"
   },
   "scripts": {
-    "test": "node test",
+    "test": "eslint src/* && node test",
     "prepublishOnly": "npm run build",
     "build": "git clean -dfX ./lib && babel src --out-dir lib --presets=es2015"
   }

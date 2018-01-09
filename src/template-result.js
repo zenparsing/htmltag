@@ -18,8 +18,11 @@ function TemplateResult(callsite, values) {
 
 // IE11's WeakMap implementation is incorrect
 let hasWeakMap = true;
-try { new WeakMap().set({}, 1).get({}); }
-catch (e) { hasWeakMap = false }
+try {
+  new WeakMap().set({}, 1).get({});
+} catch (e) {
+  hasWeakMap = false;
+}
 
 TemplateResult.cache = hasWeakMap ? new WeakMap() : new Map();
 

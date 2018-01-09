@@ -140,11 +140,23 @@ const Parser = require('../src/parser');
 
 { // Character escapes
   let parser = new Parser();
-  parser.parseChunk('<x>\\<tag\\></x>');
+  parser.parseChunk('<x>&lt;tag&gt;&amp;&quot;</x>');
   assert.deepEqual(parser.tokens, [
     ['tag-start', 'x'],
     ['tag-end', ''],
-    ['text', '<tag>'],
+    ['text', '<tag>&"'],
+    ['tag-start', '/x'],
+    ['tag-end', ''],
+  ]);
+}
+
+{ // Decimal escapes
+  let parser = new Parser();
+  parser.parseChunk('<x>&#64;</x>');
+  assert.deepEqual(parser.tokens, [
+    ['tag-start', 'x'],
+    ['tag-end', ''],
+    ['text', '@'],
     ['tag-start', '/x'],
     ['tag-end', ''],
   ]);
@@ -152,7 +164,7 @@ const Parser = require('../src/parser');
 
 { // Hex escapes
   let parser = new Parser();
-  parser.parseChunk('<x>\\x40</x>');
+  parser.parseChunk('<x>&#x40;</x>');
   assert.deepEqual(parser.tokens, [
     ['tag-start', 'x'],
     ['tag-end', ''],
@@ -164,7 +176,19 @@ const Parser = require('../src/parser');
 
 { // Unicode escapes
   let parser = new Parser();
-  parser.parseChunk('<x>\\u0040</x>');
+  parser.parseChunk('<x>&#x0040 &lt &amp</x>');
+  assert.deepEqual(parser.tokens, [
+    ['tag-start', 'x'],
+    ['tag-end', ''],
+    ['text', '@ < &'],
+    ['tag-start', '/x'],
+    ['tag-end', ''],
+  ]);
+}
+
+{ // Missing semicolon in escape
+  let parser = new Parser();
+  parser.parseChunk('<x>&#x0040</x>');
   assert.deepEqual(parser.tokens, [
     ['tag-start', 'x'],
     ['tag-end', ''],
@@ -174,22 +198,24 @@ const Parser = require('../src/parser');
   ]);
 }
 
-{ // No escapes in raw
+{ // Unknown named reference
   let parser = new Parser();
-  parser.parseChunk('<script>\\x40</script>');
+  parser.parseChunk('&foobar;');
   assert.deepEqual(parser.tokens, [
-    ['tag-start', 'script'],
-    ['tag-end', ''],
-    ['text', '\\x40'],
-    ['tag-start', '/script'],
-    ['tag-end', ''],
+    ['text', '&foobar;'],
   ]);
 }
 
-{ // Double backslash
+{ // No escapes in raw
   let parser = new Parser();
-  parser.parseChunk('\\\\x\\\\y');
-  assert.deepEqual(parser.tokens, [['text', '\\x\\y']]);
+  parser.parseChunk('<script>&#x0040</script>');
+  assert.deepEqual(parser.tokens, [
+    ['tag-start', 'script'],
+    ['tag-end', ''],
+    ['text', '&#x0040'],
+    ['tag-start', '/script'],
+    ['tag-end', ''],
+  ]);
 }
 
 { // Strange

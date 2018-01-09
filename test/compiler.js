@@ -109,7 +109,7 @@ const html = createTag(actions);
 }
 
 { // Escapes
-  assert.deepEqual(html`<x>\<tag\>\&\u0040\x40</x>`, {
+  assert.deepEqual(html`<x>&lt;tag&gt;&amp;&#x0040;&#64;</x>`, {
     tag: 'x',
     attributes: {},
     children: ['<tag>&@@'],

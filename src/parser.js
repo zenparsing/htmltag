@@ -6,7 +6,8 @@ const ATTR_VALUE_WS = 7, ATTR_VALUE = 8;
 const ATTR_VALUE_SQ = 9, ATTR_VALUE_DQ = 10;
 const COMMENT = 11;
 
-const ESC_RE = /^\\(?:x([0-9a-fA-F]{2})|u([0-9a-fA-F]{4}))?/;
+const ESC_RE = /&(?:(lt|gt|amp|quot)|#([0-9]+)|#x([0-9a-f]+));?/ig;
+const NAMED_REFS = { lt: '<', gt: '>', amp: '&', quot: '"' };
 
 function Parser() {
   this.tokens = [];
@@ -18,6 +19,7 @@ Parser.prototype.parseChunk = function(chunk) {
   let state = this.state;
   let tokens = this.tokens;
   let attrPart = (state === ATTR_VALUE_DQ || state === ATTR_VALUE_SQ);
+  let hasEscape = false;
   let a = 0;
   let b = 0;
 
@@ -29,6 +31,13 @@ Parser.prototype.parseChunk = function(chunk) {
   function push(type, value) {
     if (value === undefined) {
       value = chunk.slice(a, b);
+    }
+    if (hasEscape) {
+      hasEscape = false;
+      value = value.replace(ESC_RE, (m, name, dec, hex) => name ?
+        NAMED_REFS[name.toLowerCase()] :
+        String.fromCharCode(parseInt(dec || hex, hex ? 16 : 10))
+      );
     }
     tokens.push([type, value]);
     a = b;
@@ -42,6 +51,8 @@ Parser.prototype.parseChunk = function(chunk) {
         b -= this.tag.length + 3; // Rewind to closing tag
         state = TEXT;
       }
+    } else if (c === '&') {
+      hasEscape = true;
     } else if (state === COMMENT) {
       if (c === '>' && rmatch(chunk, b, '--')) {
         if (b - 2 > a) {
@@ -49,11 +60,6 @@ Parser.prototype.parseChunk = function(chunk) {
         }
         move(TEXT);
       }
-    } else if (c === '\\') {
-      // Unescape
-      chunk = chunk.slice(0, b) + chunk.slice(b).replace(ESC_RE, (m, x, y) =>
-        m === '\\' ? '' : String.fromCharCode(parseInt(x || y, 16))
-      );
     } else if (state === TEXT) {
       if (c === '<') {
         if (b > a) {
