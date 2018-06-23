@@ -53,7 +53,7 @@ import { treeBuilder } from 'htmltag/extras';
 const templateResult = html`<div>Hello Earth</div>`;
 
 console.log(
-  templateResult.evaluate(actions)
+  templateResult.evaluate(treeBuilder)
 );
 ```
 
@@ -112,7 +112,7 @@ console.log(
 class CustomActions {
 
   createRoot() {
-    // Creates a root code for the resulting tree
+    // Creates a root node for the resulting tree
   }
 
   createElement(tag, parent) {
