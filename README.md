@@ -16,12 +16,12 @@ A template tag function that returns `TemplateResult` objects.
 
 ```js
 import { html } from 'htmltag';
-import { treeBuilder } from 'htmltag/extras';
+import { TreeBuilder } from 'htmltag/extras';
 
 const templateResult = html`<div>Hello ${planet}</div>`;
 
 console.log(
-  templateResult.evaluate(treeBuilder);
+  templateResult.evaluate(new TreeBuilder());
 );
 ```
 
@@ -33,9 +33,9 @@ Returns a template literal tag function that parses and evaluates HTML.
 
 ```js
 import { createTag } from 'htmltag';
-import { treeBuilder } from 'htmltag/extras';
+import { TreeBuilder } from 'htmltag/extras';
 
-const html = createTag(treeBuilder);
+const html = createTag(new TreeBuilder());
 
 console.log(
   html`<div>Hello Earth</div>`
@@ -48,12 +48,12 @@ console.log(
 
 ```js
 import { html } from 'htmltag';
-import { treeBuilder } from 'htmltag/extras';
+import { TreeBuilder } from 'htmltag/extras';
 
 const templateResult = html`<div>Hello Earth</div>`;
 
 console.log(
-  templateResult.evaluate(treeBuilder)
+  templateResult.evaluate(new TreeBuilder())
 );
 ```
 

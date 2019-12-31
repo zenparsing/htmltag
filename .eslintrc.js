@@ -26,7 +26,7 @@ module.exports = {
     "space-in-parens": ["error", "never"],
     "eol-last": ["error"],
     "no-var": ["error"],
-    "quotes": ["error", "single", { "avoidEscape": true }],
+    "quotes": ["error", "single", "avoid-escape"],
     "no-implicit-globals": ["error"],
     "no-useless-concat": ["error"],
     "space-infix-ops": ["error", { "int32Hint": true }],

@@ -1,7 +1,7 @@
 'use strict';
 
 const assert = require('assert');
-const Parser = require('../src/parser');
+const { Parser } = require('../');
 
 { // Tags and attributes
   let parser = new Parser();
@@ -274,11 +274,11 @@ const Parser = require('../src/parser');
 
 { // Attribute parts SQ
   let parser = new Parser();
-  parser.parseChunk(`<x y='a`);
+  parser.parseChunk("<x y='a");
   parser.pushValue('b');
   parser.parseChunk('c');
   parser.pushValue('d');
-  parser.parseChunk(`e' />`);
+  parser.parseChunk("e' />");
   assert.deepEqual(parser.tokens, [
     ['tag-start', 'x'],
     ['attr-key', 'y'],
@@ -293,9 +293,9 @@ const Parser = require('../src/parser');
 
 { // Attribute parts must be quoted
   let parser = new Parser();
-  parser.parseChunk(`<x y=a`);
+  parser.parseChunk('<x y=a');
   parser.pushValue('b');
-  parser.parseChunk(`c />`);
+  parser.parseChunk('c />');
   assert.deepEqual(parser.tokens, [
     ['tag-start', 'x'],
     ['attr-key', 'y'],
@@ -308,9 +308,9 @@ const Parser = require('../src/parser');
 
 { // Attribute maps
   let parser = new Parser();
-  parser.parseChunk(`<x`);
+  parser.parseChunk('<x');
   parser.pushValue('map');
-  parser.parseChunk(`/>`);
+  parser.parseChunk('/>');
   assert.deepEqual(parser.tokens, [
     ['tag-start', 'x'],
     ['attr-map', 'map'],

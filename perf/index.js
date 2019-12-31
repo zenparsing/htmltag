@@ -1,10 +1,10 @@
 'use strict';
 
-const { createTag, TemplateResult } = require('../src');
+const { createTag, TemplateResult } = require('../');
 const largeDocument = require('./large-doc');
-const actions = require('../src/tree-builder');
+const { TreeBuilder } = require('../extras.js');
 
-const html = createTag(actions);
+const html = createTag(new TreeBuilder());
 
 function time(name, count, fn) {
   let start = Date.now();
