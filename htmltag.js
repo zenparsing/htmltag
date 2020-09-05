@@ -362,6 +362,13 @@ export class TemplateResult {
 
 TemplateResult.cache = new WeakMap();
 
+// IE11's WeakMap implementation is incorrect
+try {
+  new WeakMap().set({}, 1).get({});
+} catch (e) {
+  TemplateResult.cache = new Map();
+}
+
 export function html(callsite, ...values) {
   return new TemplateResult(callsite, values);
 }
