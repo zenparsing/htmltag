@@ -1,7 +1,5 @@
-'use strict';
-
-const assert = require('assert');
-const { Parser } = require('../');
+import * as assert from 'assert';
+import { Parser } from '../htmltag.js';
 
 { // Tags and attributes
   let parser = new Parser();

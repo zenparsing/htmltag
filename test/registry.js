@@ -1,8 +1,6 @@
-'use strict';
-
-const assert = require('assert');
-const { createTag } = require('../');
-const { TreeBuilder } = require('../extras.js');
+import * as assert from 'assert';
+import { createTag } from '../htmltag.js';
+import { TreeBuilder } from '../extras.js';
 
 const registry = new Map();
 
@@ -19,7 +17,7 @@ class Actions extends TreeBuilder {
 const html = createTag(new Actions());
 
 {
-  function Custom() {}
+  const Custom = function Custom() {};
   register({ Custom });
 
   let result = html`

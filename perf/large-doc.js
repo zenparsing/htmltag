@@ -1,6 +1,4 @@
-'use strict';
-
-module.exports = function(html) {
+export function createLargeDocument(html) {
 	return html`
 <html class="client-nojs" lang="en" dir="ltr">
 <head>
@@ -3000,4 +2998,4 @@ additional terms may apply.  By using this site, you agree to the <a href="//wik
 	</body>
 </html>
 	`;
-};
+}

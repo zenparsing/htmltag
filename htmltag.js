@@ -1,5 +1,3 @@
-'use strict';
-
 const placeholder = {};
 const $tokens = Symbol('tokens');
 
@@ -42,7 +40,7 @@ function rawTag(tag) {
 }
 
 
-class Parser {
+export class Parser {
 
   constructor() {
     this.tokens = [];
@@ -69,10 +67,9 @@ class Parser {
       }
       if (hasEscape) {
         hasEscape = false;
-        value = value.replace(ESC_RE, (m, name, dec, hex) => name ?
-          NAMED_REFS[name.toLowerCase()] :
-          String.fromCharCode(parseInt(dec || hex, hex ? 16 : 10))
-        );
+        value = value.replace(ESC_RE, (m, name, dec, hex) => name
+          ? NAMED_REFS[name.toLowerCase()]
+          : String.fromCharCode(parseInt(dec || hex, hex ? 16 : 10)));
       }
       tokens.push([type, value]);
       a = b;
@@ -341,7 +338,7 @@ class Vals {
 }
 
 
-class TemplateResult {
+export class TemplateResult {
 
   constructor(callsite, values) {
     let tokens = TemplateResult.cache.get(callsite);
@@ -365,23 +362,12 @@ class TemplateResult {
 
 TemplateResult.cache = new WeakMap();
 
-// IE11's WeakMap implementation is incorrect
-try {
-  new WeakMap().set({}, 1).get({});
-} catch (e) {
-  TemplateResult.cache = new Map();
+export function html(callsite, ...values) {
+  return new TemplateResult(callsite, values);
 }
 
-exports.Parser = Parser;
-
-exports.TemplateResult = TemplateResult;
-
-exports.html = function(callsite, ...values) {
-  return new TemplateResult(callsite, values);
-};
-
-exports.createTag = function(actions) {
+export function createTag(actions) {
   return function htmlTag(literals, ...values) {
     return new TemplateResult(literals, values).evaluate(actions);
   };
-};
+}

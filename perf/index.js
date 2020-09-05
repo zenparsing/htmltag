@@ -1,8 +1,6 @@
-'use strict';
-
-const { createTag, TemplateResult } = require('../');
-const largeDocument = require('./large-doc');
-const { TreeBuilder } = require('../extras.js');
+import { createTag, TemplateResult } from '../htmltag.js';
+import { createLargeDocument } from './large-doc.js';
+import { TreeBuilder } from '../extras.js';
 
 const html = createTag(new TreeBuilder());
 
@@ -15,10 +13,10 @@ function time(name, count, fn) {
 }
 
 time('Large document compile (100, no cache)', 10, i => {
-  largeDocument(html);
+  createLargeDocument(html);
   TemplateResult.cache = new WeakMap();
 });
 
 time('Large document compile (1000, cache)  ', 100, i => {
-  largeDocument(html);
+  createLargeDocument(html);
 });

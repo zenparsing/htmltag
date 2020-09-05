@@ -1,5 +1,3 @@
-'use strict';
-
-require('./parser');
-require('./compiler');
-require('./registry');
+import './parser.js';
+import './compiler.js';
+import './registry.js';

@@ -1,4 +1,4 @@
-class TreeBuilder {
+export class TreeBuilder {
 
   createRoot() {
     return this.createElement('#document-fragment');
@@ -44,5 +44,3 @@ class TreeBuilder {
   }
 
 }
-
-exports.TreeBuilder = TreeBuilder;
