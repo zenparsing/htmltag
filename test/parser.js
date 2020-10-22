@@ -1,97 +1,112 @@
 import * as assert from 'assert';
-import { Parser } from '../htmltag.js';
+
+import {
+  Parser,
+  T_COMMENT,
+  T_TEXT,
+  T_ATTR_PART,
+  T_ATTR_MAP,
+  T_ATTR_VALUE,
+  T_TAG_START,
+  T_ATTR_KEY,
+  T_TAG_END,
+} from '../htmltag.js';
+
+function assertTokenList(actual, expected) {
+  assert.deepStrictEqual(actual.map(t => [t.type, t.value]), expected);
+}
 
 { // Tags and attributes
   let parser = new Parser();
   parser.parseChunk(`
     <tag a=x b=1 c="y" d='z'></tag>
   `);
-  assert.deepEqual(parser.tokens, [
-    ['text', '\n    '],
-    ['tag-start', 'tag'],
-    ['attr-key', 'a'],
-    ['attr-value', 'x'],
-    ['attr-key', 'b'],
-    ['attr-value', '1'],
-    ['attr-key', 'c'],
-    ['attr-value', 'y'],
-    ['attr-key', 'd'],
-    ['attr-value', 'z'],
-    ['tag-end', ''],
-    ['tag-start', '/tag'],
-    ['tag-end', ''],
-    ['text', '\n  '],
+  assertTokenList(parser.tokens, [
+    [T_TEXT, '\n    '],
+    [T_TAG_START, 'tag'],
+    [T_ATTR_KEY, 'a'],
+    [T_ATTR_VALUE, 'x'],
+    [T_ATTR_KEY, 'b'],
+    [T_ATTR_VALUE, '1'],
+    [T_ATTR_KEY, 'c'],
+    [T_ATTR_VALUE, 'y'],
+    [T_ATTR_KEY, 'd'],
+    [T_ATTR_VALUE, 'z'],
+    [T_TAG_END, ''],
+    [T_TAG_START, '/tag'],
+    [T_TAG_END, ''],
+    [T_TEXT, '\n  '],
   ]);
 }
 
 { // Explicit self-closing
   let parser = new Parser();
   parser.parseChunk('<x />');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'x'],
-    ['tag-end', '/'],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'x'],
+    [T_TAG_END, '/'],
   ]);
 }
 
 { // Exclicit self-closing with no space
   let parser = new Parser();
   parser.parseChunk('<x/>');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'x'],
-    ['tag-end', '/'],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'x'],
+    [T_TAG_END, '/'],
   ]);
 }
 
 { // Comments
   let parser = new Parser();
   parser.parseChunk('<!--test-->');
-  assert.deepEqual(parser.tokens, [['comment', 'test']]);
+  assertTokenList(parser.tokens, [[T_COMMENT, 'test']]);
   parser = new Parser();
   parser.parseChunk('<!--');
   parser.parseChunk('hidden');
   parser.parseChunk('-->');
-  assert.deepEqual(parser.tokens, [['comment', 'hidden']]);
+  assertTokenList(parser.tokens, [[T_COMMENT, 'hidden']]);
   parser = new Parser();
   parser.parseChunk('<!--a');
   parser.pushValue('b');
   parser.parseChunk('c');
   parser.parseChunk('d-->');
-  assert.deepEqual(parser.tokens, [
-    ['comment', 'a'],
-    ['comment', 'b'],
-    ['comment', 'c'],
-    ['comment', 'd'],
+  assertTokenList(parser.tokens, [
+    [T_COMMENT, 'a'],
+    [T_COMMENT, 'b'],
+    [T_COMMENT, 'c'],
+    [T_COMMENT, 'd'],
   ]);
 }
 
 { // Strange tag name with !--
   let parser = new Parser();
   parser.parseChunk('<a!-- />');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'a!--'],
-    ['tag-end', '/'],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'a!--'],
+    [T_TAG_END, '/'],
   ]);
 }
 
 { // Attribute key WS before />
   let parser = new Parser();
   parser.parseChunk('<x a />');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'x'],
-    ['attr-key', 'a'],
-    ['tag-end', '/'],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'x'],
+    [T_ATTR_KEY, 'a'],
+    [T_TAG_END, '/'],
   ]);
 }
 
 { // Raw tag: script
   let parser = new Parser();
   parser.parseChunk('<script>console.log("<tag>")</script>');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'script'],
-    ['tag-end', ''],
-    ['text', 'console.log("<tag>")'],
-    ['tag-start', '/script'],
-    ['tag-end', ''],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'script'],
+    [T_TAG_END, ''],
+    [T_TEXT, 'console.log("<tag>")'],
+    [T_TAG_START, '/script'],
+    [T_TAG_END, ''],
   ]);
 }
 
@@ -100,154 +115,154 @@ import { Parser } from '../htmltag.js';
   parser.parseChunk('<script>a');
   parser.pushValue('b');
   parser.parseChunk('c</script>');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'script'],
-    ['tag-end', ''],
-    ['text', 'a'],
-    ['text', 'b'],
-    ['text', 'c'],
-    ['tag-start', '/script'],
-    ['tag-end', ''],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'script'],
+    [T_TAG_END, ''],
+    [T_TEXT, 'a'],
+    [T_TEXT, 'b'],
+    [T_TEXT, 'c'],
+    [T_TAG_START, '/script'],
+    [T_TAG_END, ''],
   ]);
 }
 
 { // Raw self-closing
   let parser = new Parser();
   parser.parseChunk('<script /><x></x>');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'script'],
-    ['tag-end', '/'],
-    ['tag-start', 'x'],
-    ['tag-end', ''],
-    ['tag-start', '/x'],
-    ['tag-end', ''],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'script'],
+    [T_TAG_END, '/'],
+    [T_TAG_START, 'x'],
+    [T_TAG_END, ''],
+    [T_TAG_START, '/x'],
+    [T_TAG_END, ''],
   ]);
 }
 
 { // Raw tag: style
   let parser = new Parser();
   parser.parseChunk('<style>a { content: "<tag>" }</style>');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'style'],
-    ['tag-end', ''],
-    ['text', 'a { content: "<tag>" }'],
-    ['tag-start', '/style'],
-    ['tag-end', ''],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'style'],
+    [T_TAG_END, ''],
+    [T_TEXT, 'a { content: "<tag>" }'],
+    [T_TAG_START, '/style'],
+    [T_TAG_END, ''],
   ]);
 }
 
 { // Character escapes
   let parser = new Parser();
   parser.parseChunk('<x>&lt;tag&gt;&amp;&quot;</x>');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'x'],
-    ['tag-end', ''],
-    ['text', '<tag>&"'],
-    ['tag-start', '/x'],
-    ['tag-end', ''],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'x'],
+    [T_TAG_END, ''],
+    [T_TEXT, '<tag>&"'],
+    [T_TAG_START, '/x'],
+    [T_TAG_END, ''],
   ]);
 }
 
 { // Decimal escapes
   let parser = new Parser();
   parser.parseChunk('<x>&#64;</x>');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'x'],
-    ['tag-end', ''],
-    ['text', '@'],
-    ['tag-start', '/x'],
-    ['tag-end', ''],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'x'],
+    [T_TAG_END, ''],
+    [T_TEXT, '@'],
+    [T_TAG_START, '/x'],
+    [T_TAG_END, ''],
   ]);
 }
 
 { // Hex escapes
   let parser = new Parser();
   parser.parseChunk('<x>&#x40;</x>');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'x'],
-    ['tag-end', ''],
-    ['text', '@'],
-    ['tag-start', '/x'],
-    ['tag-end', ''],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'x'],
+    [T_TAG_END, ''],
+    [T_TEXT, '@'],
+    [T_TAG_START, '/x'],
+    [T_TAG_END, ''],
   ]);
 }
 
 { // Unicode escapes
   let parser = new Parser();
   parser.parseChunk('<x>&#x0040 &lt &amp</x>');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'x'],
-    ['tag-end', ''],
-    ['text', '@ < &'],
-    ['tag-start', '/x'],
-    ['tag-end', ''],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'x'],
+    [T_TAG_END, ''],
+    [T_TEXT, '@ < &'],
+    [T_TAG_START, '/x'],
+    [T_TAG_END, ''],
   ]);
 }
 
 { // Missing semicolon in escape
   let parser = new Parser();
   parser.parseChunk('<x>&#x0040</x>');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'x'],
-    ['tag-end', ''],
-    ['text', '@'],
-    ['tag-start', '/x'],
-    ['tag-end', ''],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'x'],
+    [T_TAG_END, ''],
+    [T_TEXT, '@'],
+    [T_TAG_START, '/x'],
+    [T_TAG_END, ''],
   ]);
 }
 
 { // Unknown named reference
   let parser = new Parser();
   parser.parseChunk('&foobar;');
-  assert.deepEqual(parser.tokens, [
-    ['text', '&foobar;'],
+  assertTokenList(parser.tokens, [
+    [T_TEXT, '&foobar;'],
   ]);
 }
 
 { // No escapes in raw
   let parser = new Parser();
   parser.parseChunk('<script>&#x0040</script>');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'script'],
-    ['tag-end', ''],
-    ['text', '&#x0040'],
-    ['tag-start', '/script'],
-    ['tag-end', ''],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'script'],
+    [T_TAG_END, ''],
+    [T_TEXT, '&#x0040'],
+    [T_TAG_START, '/script'],
+    [T_TAG_END, ''],
   ]);
 }
 
 { // Strange
   let parser = new Parser();
   parser.parseChunk('<a b=/>');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'a'],
-    ['attr-key', 'b'],
-    ['tag-end', '/'],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'a'],
+    [T_ATTR_KEY, 'b'],
+    [T_TAG_END, '/'],
   ]);
 }
 
 { // Strange
   let parser = new Parser();
   parser.parseChunk('<x /=y=1></x>');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'x'],
-    ['attr-key', 'y'],
-    ['attr-value', '1'],
-    ['tag-end', ''],
-    ['tag-start', '/x'],
-    ['tag-end', ''],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'x'],
+    [T_ATTR_KEY, 'y'],
+    [T_ATTR_VALUE, '1'],
+    [T_TAG_END, ''],
+    [T_TAG_START, '/x'],
+    [T_TAG_END, ''],
   ]);
 }
 
 { // Missing closing tag name
   let parser = new Parser();
   parser.parseChunk('<x>a</>');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'x'],
-    ['tag-end', ''],
-    ['text', 'a'],
-    ['tag-start', '/'],
-    ['tag-end', ''],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'x'],
+    [T_TAG_END, ''],
+    [T_TEXT, 'a'],
+    [T_TAG_START, '/'],
+    [T_TAG_END, ''],
   ]);
 }
 
@@ -258,15 +273,15 @@ import { Parser } from '../htmltag.js';
   parser.parseChunk('c');
   parser.pushValue('d');
   parser.parseChunk('e" />');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'x'],
-    ['attr-key', 'y'],
-    ['attr-part', 'a'],
-    ['attr-part', 'b'],
-    ['attr-part', 'c'],
-    ['attr-part', 'd'],
-    ['attr-part', 'e'],
-    ['tag-end', '/'],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'x'],
+    [T_ATTR_KEY, 'y'],
+    [T_ATTR_PART, 'a'],
+    [T_ATTR_PART, 'b'],
+    [T_ATTR_PART, 'c'],
+    [T_ATTR_PART, 'd'],
+    [T_ATTR_PART, 'e'],
+    [T_TAG_END, '/'],
   ]);
 }
 
@@ -277,15 +292,15 @@ import { Parser } from '../htmltag.js';
   parser.parseChunk('c');
   parser.pushValue('d');
   parser.parseChunk("e' />");
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'x'],
-    ['attr-key', 'y'],
-    ['attr-part', 'a'],
-    ['attr-part', 'b'],
-    ['attr-part', 'c'],
-    ['attr-part', 'd'],
-    ['attr-part', 'e'],
-    ['tag-end', '/'],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'x'],
+    [T_ATTR_KEY, 'y'],
+    [T_ATTR_PART, 'a'],
+    [T_ATTR_PART, 'b'],
+    [T_ATTR_PART, 'c'],
+    [T_ATTR_PART, 'd'],
+    [T_ATTR_PART, 'e'],
+    [T_TAG_END, '/'],
   ]);
 }
 
@@ -294,13 +309,13 @@ import { Parser } from '../htmltag.js';
   parser.parseChunk('<x y=a');
   parser.pushValue('b');
   parser.parseChunk('c />');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'x'],
-    ['attr-key', 'y'],
-    ['attr-value', 'a'],
-    ['attr-map', 'b'],
-    ['attr-key', 'c'],
-    ['tag-end', '/'],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'x'],
+    [T_ATTR_KEY, 'y'],
+    [T_ATTR_VALUE, 'a'],
+    [T_ATTR_MAP, 'b'],
+    [T_ATTR_KEY, 'c'],
+    [T_TAG_END, '/'],
   ]);
 }
 
@@ -309,10 +324,10 @@ import { Parser } from '../htmltag.js';
   parser.parseChunk('<x');
   parser.pushValue('map');
   parser.parseChunk('/>');
-  assert.deepEqual(parser.tokens, [
-    ['tag-start', 'x'],
-    ['attr-map', 'map'],
-    ['tag-end', '/'],
+  assertTokenList(parser.tokens, [
+    [T_TAG_START, 'x'],
+    [T_ATTR_MAP, 'map'],
+    [T_TAG_END, '/'],
   ]);
 }
 
@@ -324,23 +339,23 @@ import { Parser } from '../htmltag.js';
       <animate />
     </path>
   `);
-  assert.deepEqual(parser.tokens, [
-    ['text', '\n    '],
-    ['tag-start', 'path'],
-    ['tag-end', ''],
-    ['tag-start', '/path'],
-    ['tag-end', ''],
-    ['text', '\n    '],
-    ['tag-start', 'path'],
-    ['attr-key', 'id'],
-    ['attr-value', 'r2'],
-    ['tag-end', ''],
-    ['text', '\n      '],
-    ['tag-start', 'animate'],
-    ['tag-end', '/'],
-    ['text', '\n    '],
-    ['tag-start', '/path'],
-    ['tag-end', ''],
-    ['text', '\n  '],
+  assertTokenList(parser.tokens, [
+    [T_TEXT, '\n    '],
+    [T_TAG_START, 'path'],
+    [T_TAG_END, ''],
+    [T_TAG_START, '/path'],
+    [T_TAG_END, ''],
+    [T_TEXT, '\n    '],
+    [T_TAG_START, 'path'],
+    [T_ATTR_KEY, 'id'],
+    [T_ATTR_VALUE, 'r2'],
+    [T_TAG_END, ''],
+    [T_TEXT, '\n      '],
+    [T_TAG_START, 'animate'],
+    [T_TAG_END, '/'],
+    [T_TEXT, '\n    '],
+    [T_TAG_START, '/path'],
+    [T_TAG_END, ''],
+    [T_TEXT, '\n  '],
   ]);
 }

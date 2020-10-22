@@ -1,17 +1,45 @@
+function makeEnum(i = 0) {
+  return new Proxy({}, { get() { return i++; } });
+}
+
+const {
+  S_TEXT,
+  S_RAW,
+  S_OPEN,
+  S_ATTR,
+  S_ATTR_KEY,
+  S_ATTR_KEY_WS,
+  S_ATTR_VALUE_WS,
+  S_ATTR_VALUE,
+  S_ATTR_VALUE_SQ,
+  S_ATTR_VALUE_DQ,
+  S_COMMENT,
+} = makeEnum();
+
+export const {
+  T_NONE,
+  T_COMMENT,
+  T_TEXT,
+  T_ATTR_PART,
+  T_ATTR_MAP,
+  T_ATTR_VALUE,
+  T_TAG_START,
+  T_ATTR_KEY,
+  T_TAG_END,
+} = makeEnum();
+
 const placeholder = {};
 const $tokens = Symbol('tokens');
-
-const TEXT = 1, RAW = 2, OPEN = 3, ATTR = 4;
-const ATTR_KEY = 5, ATTR_KEY_WS = 6;
-const ATTR_VALUE_WS = 7, ATTR_VALUE = 8;
-const ATTR_VALUE_SQ = 9, ATTR_VALUE_DQ = 10;
-const COMMENT = 11;
 
 const ESC_RE = /&(?:(lt|gt|amp|quot)|#([0-9]+)|#x([0-9a-f]+));?/ig;
 const NAMED_REFS = { lt: '<', gt: '>', amp: '&', quot: '"' };
 
 function wsToken(t) {
-  return t[0] === 'text' && typeof t[1] === 'string' && (!t[1] || !t[1].trim());
+  return (
+    t.type === T_TEXT &&
+    typeof t.value === 'string' &&
+    (!t.value || !t.value.trim())
+  );
 }
 
 function rmatch(s, end, t) {
@@ -39,160 +67,193 @@ function rawTag(tag) {
   return tag === 'script' || tag === 'style';
 }
 
+function escape(value) {
+  return value.replace(ESC_RE, (m, name, dec, hex) => name
+    ? NAMED_REFS[name.toLowerCase()]
+    : String.fromCharCode(parseInt(dec || hex, hex ? 16 : 10)));
+}
+
+class Token {
+  constructor(type, value, hasEscape) {
+    this.type = type;
+    this.value = hasEscape ? escape(value) : value;
+  }
+}
 
 export class Parser {
 
   constructor() {
     this.tokens = [];
-    this.state = TEXT;
+    this.state = S_TEXT;
     this.tag = '';
   }
 
   parseChunk(chunk) {
     let state = this.state;
     let tokens = this.tokens;
-    let attrPart = (state === ATTR_VALUE_DQ || state === ATTR_VALUE_SQ);
+    let attrPart = (state === S_ATTR_VALUE_DQ || state === S_ATTR_VALUE_SQ);
     let hasEscape = false;
     let a = 0;
     let b = 0;
 
-    function move(s, shift) {
-      state = s;
-      a = shift ? b : b + 1;
-    }
-
-    function push(type, value) {
-      if (value === undefined) {
-        value = chunk.slice(a, b);
-      }
-      if (hasEscape) {
-        hasEscape = false;
-        value = value.replace(ESC_RE, (m, name, dec, hex) => name
-          ? NAMED_REFS[name.toLowerCase()]
-          : String.fromCharCode(parseInt(dec || hex, hex ? 16 : 10)));
-      }
-      tokens.push([type, value]);
-      a = b;
-      return value;
-    }
-
     for (; b < chunk.length; ++b) {
       let c = chunk[b];
-      if (state === RAW) {
+      if (state === S_RAW) {
         if (c === '>' && rmatch(chunk, b, '</' + this.tag)) {
           b -= this.tag.length + 3; // Rewind to closing tag
-          state = TEXT;
+          state = S_TEXT;
+        }
+      } else if (state === S_COMMENT) {
+        if (c === '>' && rmatch(chunk, b, '--')) {
+          if (b - 2 > a) {
+            tokens.push(new Token(T_COMMENT, chunk.slice(a, b - 2), false));
+          }
+          state = S_TEXT;
+          hasEscape = false;
+          a = b + 1;
         }
       } else if (c === '&') {
         hasEscape = true;
-      } else if (state === COMMENT) {
-        if (c === '>' && rmatch(chunk, b, '--')) {
-          if (b - 2 > a) {
-            push('comment', chunk.slice(a, b - 2));
-          }
-          move(TEXT);
-        }
-      } else if (state === TEXT) {
+      } else if (state === S_TEXT) {
         if (c === '<') {
           if (b > a) {
-            push('text');
+            tokens.push(new Token(T_TEXT, chunk.slice(a, b), hasEscape));
           }
-          move(OPEN);
+          state = S_OPEN;
+          hasEscape = false;
+          a = b + 1;
         }
-      } else if (state === ATTR_VALUE_SQ) {
+      } else if (state === S_ATTR_VALUE_SQ) {
         if (c === "'") {
-          push(attrPart ? 'attr-part' : 'attr-value');
+          let type = attrPart ? T_ATTR_PART : T_ATTR_VALUE;
+          tokens.push(new Token(type, chunk.slice(a, b), hasEscape));
+          state = S_ATTR;
+          hasEscape = false;
           attrPart = false;
-          move(ATTR);
+          a = b + 1;
         }
-      } else if (state === ATTR_VALUE_DQ) {
+      } else if (state === S_ATTR_VALUE_DQ) {
         if (c === '"') {
-          push(attrPart ? 'attr-part' : 'attr-value');
+          let type = attrPart ? T_ATTR_PART : T_ATTR_VALUE;
+          tokens.push(new Token(type, chunk.slice(a, b), hasEscape));
+          state = S_ATTR;
+          hasEscape = false;
           attrPart = false;
-          move(ATTR);
+          a = b + 1;
         }
       } else if (c === '>') {
-        if (state === OPEN) {
-          this.tag = push('tag-start');
-        } else if (state === ATTR_KEY) {
-          push('attr-key');
-        } else if (state === ATTR_VALUE) {
-          push('attr-value');
+        if (state === S_OPEN) {
+          let value = chunk.slice(a, b);
+          tokens.push(new Token(T_TAG_START, value, hasEscape));
+          hasEscape = false;
+          a = b;
+          this.tag = value;
+        } else if (state === S_ATTR_KEY) {
+          tokens.push(new Token(T_ATTR_KEY, chunk.slice(a, b), hasEscape));
+          hasEscape = false;
+          a = b;
+        } else if (state === S_ATTR_VALUE) {
+          tokens.push(new Token(T_ATTR_VALUE, chunk.slice(a, b), hasEscape));
+          hasEscape = false;
+          a = b;
         }
         if (rmatch(chunk, b, '/') && this.tag[0] !== '/') {
-          push('tag-end', '/');
-          move(TEXT);
+          tokens.push(new Token(T_TAG_END, '/', false));
+          state = S_TEXT;
+          hasEscape = false;
+          a = b + 1;
         } else {
-          push('tag-end', '');
-          move(rawTag(this.tag) ? RAW : TEXT);
+          tokens.push(new Token(T_TAG_END, '', false));
+          hasEscape = false;
+          state = rawTag(this.tag) ? S_RAW : S_TEXT;
+          a = b + 1;
         }
-      } else if (state === OPEN) {
+      } else if (state === S_OPEN) {
         if (c === '-' && chunk.slice(a, b) === '!-') {
-          move(COMMENT);
+          state = S_COMMENT;
+          a = b + 1;
         } else if (c === '/' && b === a) {
           // Allow leading slash
         } else if (!attrChar(c)) {
-          this.tag = push('tag-start');
-          move(ATTR);
+          let value = chunk.slice(a, b);
+          tokens.push(new Token(T_TAG_START, value, hasEscape));
+          this.tag = value;
+          hasEscape = false;
+          state = S_ATTR;
+          a = b + 1;
         }
-      } else if (state === ATTR) {
+      } else if (state === S_ATTR) {
         if (attrChar(c)) {
-          move(ATTR_KEY, true);
+          state = S_ATTR_KEY;
+          a = b;
         }
-      } else if (state === ATTR_KEY) {
+      } else if (state === S_ATTR_KEY) {
         if (c === '=') {
-          push('attr-key');
-          move(ATTR_VALUE_WS);
+          tokens.push(new Token(T_ATTR_KEY, chunk.slice(a, b), hasEscape));
+          hasEscape = false;
+          state = S_ATTR_VALUE_WS;
+          a = b + 1;
         } else if (!attrChar(c)) {
-          push('attr-key');
-          move(ATTR_KEY_WS);
+          tokens.push(new Token(T_ATTR_KEY, chunk.slice(a, b), hasEscape));
+          hasEscape = false;
+          state = S_ATTR_KEY_WS;
+          a = b + 1;
         }
-      } else if (state === ATTR_KEY_WS) {
+      } else if (state === S_ATTR_KEY_WS) {
         if (c === '=') {
-          move(ATTR_VALUE_WS);
+          state = S_ATTR_VALUE_WS;
+          a = b + 1;
         } else if (attrChar(c)) {
-          move(ATTR_KEY, true);
+          state = S_ATTR_KEY;
+          a = b;
         }
-      } else if (state === ATTR_VALUE_WS) {
+      } else if (state === S_ATTR_VALUE_WS) {
         if (c === '"') {
-          move(ATTR_VALUE_DQ);
+          state = S_ATTR_VALUE_DQ;
+          a = b + 1;
         } else if (c === "'") {
-          move(ATTR_VALUE_SQ);
+          state = S_ATTR_VALUE_SQ;
+          a = b + 1;
         } else if (attrChar(c)) {
-          move(ATTR_VALUE, true);
+          state = S_ATTR_VALUE;
+          a = b;
         }
-      } else if (state === ATTR_VALUE) {
+      } else if (state === S_ATTR_VALUE) {
         if (!attrChar(c)) {
-          push('attr-value');
-          move(ATTR);
+          tokens.push(new Token(T_ATTR_VALUE, chunk.slice(a, b), hasEscape));
+          hasEscape = false;
+          state = S_ATTR;
+          a = b + 1;
         }
       }
     }
 
-    if (state === TEXT || state === RAW) {
+    if (state === S_TEXT || state === S_RAW) {
       if (a < b) {
-        push('text');
+        tokens.push(new Token(T_TEXT, chunk.slice(a, b), hasEscape));
       }
-    } else if (state === COMMENT) {
+    } else if (state === S_COMMENT) {
       if (a < b) {
-        push('comment');
+        tokens.push(new Token(T_COMMENT, chunk.slice(a, b), hasEscape));
       }
-    } else if (state === OPEN) {
+    } else if (state === S_OPEN) {
       if (a < b) {
-        this.tag = push('tag-start');
-        move(ATTR);
+        let value = chunk.slice(a, b);
+        tokens.push(new Token(T_TAG_START, value, hasEscape));
+        this.tag = value;
+        state = S_ATTR;
       }
-    } else if (state === ATTR_KEY) {
-      push('attr-key');
-      move(ATTR);
-    } else if (state === ATTR_KEY_WS) {
-      move(ATTR);
-    } else if (state === ATTR_VALUE) {
-      push('attr-value');
-      move(ATTR);
-    } else if (state === ATTR_VALUE_SQ || state === ATTR_VALUE_DQ) {
+    } else if (state === S_ATTR_KEY) {
+      tokens.push(new Token(T_ATTR_KEY, chunk.slice(a, b), hasEscape));
+      state = S_ATTR;
+    } else if (state === S_ATTR_KEY_WS) {
+      state = S_ATTR;
+    } else if (state === S_ATTR_VALUE) {
+      tokens.push(new Token(T_ATTR_VALUE, chunk.slice(a, b), hasEscape));
+      state = S_ATTR;
+    } else if (state === S_ATTR_VALUE_SQ || state === S_ATTR_VALUE_DQ) {
       if (a < b) {
-        push('attr-part');
+        tokens.push(new Token(T_ATTR_PART, chunk.slice(a, b), hasEscape));
       }
     }
 
@@ -200,41 +261,37 @@ export class Parser {
   }
 
   pushValue(value) {
-    let state = this.state;
-    let tokens = this.tokens;
-    let type = '';
+    let type = T_NONE;
 
-    switch (state) {
-      case TEXT:
-      case RAW:
-        type = 'text';
+    switch (this.state) {
+      case S_TEXT:
+      case S_RAW:
+        type = T_TEXT;
         break;
-      case COMMENT:
-        type = 'comment';
+      case S_COMMENT:
+        type = T_COMMENT;
         break;
-      case OPEN:
-        type = 'tag-start';
+      case S_OPEN:
+        type = T_TAG_START;
         this.tag = value;
-        state = ATTR;
+        this.state = S_ATTR;
         break;
-      case ATTR:
-        type = 'attr-map';
+      case S_ATTR:
+        type = T_ATTR_MAP;
         break;
-      case ATTR_VALUE_WS:
-        type = 'attr-value';
-        state = ATTR;
+      case S_ATTR_VALUE_WS:
+        type = T_ATTR_VALUE;
+        this.state = S_ATTR;
         break;
-      case ATTR_VALUE_SQ:
-      case ATTR_VALUE_DQ:
-        type = 'attr-part';
+      case S_ATTR_VALUE_SQ:
+      case S_ATTR_VALUE_DQ:
+        type = T_ATTR_PART;
         break;
     }
 
     if (type) {
-      tokens.push([type, value]);
+      this.tokens.push(new Token(type, value));
     }
-
-    this.state = state;
   }
 
   end() {
@@ -254,7 +311,6 @@ export class Parser {
 
 }
 
-
 function tokenize(chunks) {
   if (chunks.length === 0) {
     return [];
@@ -268,15 +324,14 @@ function tokenize(chunks) {
   return parser.end();
 }
 
-
 function walk(i, node, tokens, vals, actions) {
   for (; i < tokens.length; ++i) {
     let t = tokens[i];
-    switch (t[0]) {
-      case 'tag-start': {
+    switch (t.type) {
+      case T_TAG_START: {
         let tag = vals.read(t);
         if (typeof tag === 'string' && tag[0] === '/') { // Closing tag
-          while (i < tokens.length && tokens[++i][0] !== 'tag-end'); // Skip attributes
+          while (i < tokens.length && tokens[++i].type !== T_TAG_END); // Skip attributes
           return i;
         }
         let child = actions.createElement(tag, node);
@@ -284,27 +339,27 @@ function walk(i, node, tokens, vals, actions) {
         actions.appendChild(node, actions.finishElement(child));
         break;
       }
-      case 'tag-end':
-        if (t[1] === '/') { return i; }
+      case T_TAG_END:
+        if (t.value === '/') { return i; }
         break;
-      case 'text':
+      case T_TEXT:
         actions.appendChild(node, vals.read(t));
         break;
-      case 'comment':
+      case T_COMMENT:
         actions.appendChild(node, actions.createComment(vals.read(t), node));
         break;
-      case 'attr-map':
+      case T_ATTR_MAP:
         actions.setAttributes(node, vals.read(t));
         break;
-      case 'attr-key': {
+      case T_ATTR_KEY: {
         let name = vals.read(t);
-        switch (i + 1 < tokens.length ? tokens[i + 1][0] : '') {
-          case 'attr-value':
+        switch (i + 1 < tokens.length ? tokens[i + 1].type : T_NONE) {
+          case T_ATTR_VALUE:
             actions.setAttribute(node, name, vals.read(tokens[++i]));
             break;
-          case 'attr-part': {
+          case T_ATTR_PART: {
             let parts = [vals.read(tokens[++i])];
-            while (i + 1 < tokens.length && tokens[i + 1][0] === 'attr-part') {
+            while (i + 1 < tokens.length && tokens[i + 1].type === T_ATTR_PART) {
               parts.push(vals.read(tokens[++i]));
             }
             actions.setAttributeParts(node, name, parts);
@@ -319,7 +374,6 @@ function walk(i, node, tokens, vals, actions) {
   }
 }
 
-
 class Vals {
 
   constructor(values, actions) {
@@ -329,14 +383,12 @@ class Vals {
   }
 
   read(t) {
-    if (t[1] === placeholder) {
-      return this.actions.mapValue(this.values[this.index++]);
-    }
-    return t[1];
+    return t.value === placeholder
+      ? this.actions.mapValue(this.values[this.index++])
+      : t.value;
   }
 
 }
-
 
 export class TemplateResult {
 
