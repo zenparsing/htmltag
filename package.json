@@ -1,6 +1,6 @@
 {
   "name": "htmltag",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "HTML template tag compiler",
   "type": "module",
   "main": "./htmltag.js",
@@ -16,11 +16,11 @@
     "html"
   ],
   "homepage": "https://github.com/zenparsing/htmltag",
-  "devDependencies": {},
+  "devDependencies": {
+    "eslint": "^7.11.0"
+  },
   "scripts": {
     "test": "eslint *.js test/*.js && node test"
   },
-  "dependencies": {
-    "eslint": "^7.8.1"
-  }
+  "dependencies": {}
 }
