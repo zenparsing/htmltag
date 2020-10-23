@@ -2,6 +2,18 @@ function makeEnum(i = 0) {
   return new Proxy({}, { get() { return i++; } });
 }
 
+export const {
+  T_NONE,
+  T_COMMENT,
+  T_TEXT,
+  T_ATTR_PART,
+  T_ATTR_MAP,
+  T_ATTR_VALUE,
+  T_TAG_START,
+  T_ATTR_KEY,
+  T_TAG_END,
+} = makeEnum();
+
 const {
   S_TEXT,
   S_RAW,
@@ -16,19 +28,6 @@ const {
   S_COMMENT,
 } = makeEnum();
 
-export const {
-  T_NONE,
-  T_COMMENT,
-  T_TEXT,
-  T_ATTR_PART,
-  T_ATTR_MAP,
-  T_ATTR_VALUE,
-  T_TAG_START,
-  T_ATTR_KEY,
-  T_TAG_END,
-} = makeEnum();
-
-const placeholder = {};
 const $tokens = Symbol('tokens');
 
 const ESC_RE = /&(?:(lt|gt|amp|quot)|#([0-9]+)|#x([0-9a-f]+));?/ig;
@@ -77,6 +76,7 @@ class Token {
   constructor(type, value, hasEscape) {
     this.type = type;
     this.value = hasEscape ? escape(value) : value;
+    this.mutable = false;
   }
 }
 
@@ -290,7 +290,9 @@ export class Parser {
     }
 
     if (type) {
-      this.tokens.push(new Token(type, value));
+      let token = new Token(type, value);
+      token.mutable = true;
+      this.tokens.push(token);
     }
   }
 
@@ -318,7 +320,7 @@ function tokenize(chunks) {
   let parser = new Parser();
   parser.parseChunk(chunks[0]);
   for (let i = 1; i < chunks.length; i++) {
-    parser.pushValue(placeholder);
+    parser.pushValue('');
     parser.parseChunk(chunks[i]);
   }
   return parser.end();
@@ -383,7 +385,7 @@ class Vals {
   }
 
   read(t) {
-    return t.value === placeholder
+    return t.mutable
       ? this.actions.mapValue(this.values[this.index++])
       : t.value;
   }
