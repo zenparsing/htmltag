@@ -24,5 +24,5 @@ const html = createTag(new Actions());
     <Custom id='foo' className='cls' />
   `;
 
-  assert.deepEqual(result.tag, Custom);
+  assert.deepStrictEqual(result.tag, Custom);
 }

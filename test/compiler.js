@@ -5,7 +5,7 @@ import { TreeBuilder } from '../extras.js';
 const html = createTag(new TreeBuilder());
 
 { // Attributes
-  assert.deepEqual(html`
+  assert.deepStrictEqual(html`
     <div a=1 b='2' c=${ 3 } d='4${ 4 }4' ${{ e: 5, f: 6, a: 7 }}></div>
   `, {
     tag: 'div',
@@ -16,7 +16,7 @@ const html = createTag(new TreeBuilder());
 
 { // Dynamic tag names
   let custom = 'dynamic-type';
-  assert.deepEqual(html`
+  assert.deepStrictEqual(html`
     <${ custom } id='c'>
       <div></div>
     </${ custom }>
@@ -32,7 +32,7 @@ const html = createTag(new TreeBuilder());
 }
 
 { // Closing tag doesn't require a name
-  assert.deepEqual(html`
+  assert.deepStrictEqual(html`
     <div>
       <${'dynamic'}>
         <span></span>
@@ -61,7 +61,7 @@ const html = createTag(new TreeBuilder());
 }
 
 { // Explicit self-closing tags
-  assert.deepEqual(html`
+  assert.deepStrictEqual(html`
     <div><a /></div>
   `, {
     tag: 'div',
@@ -73,13 +73,13 @@ const html = createTag(new TreeBuilder());
 }
 
 { // Flag attributes
-  assert.deepEqual(html`
+  assert.deepStrictEqual(html`
     <x f1 x=1 f2 />
   `, {
     tag: 'x',
     attributes: {
       f1: true,
-      x: 1,
+      x: '1',
       f2: true,
     },
     children: [],
@@ -87,7 +87,7 @@ const html = createTag(new TreeBuilder());
 }
 
 { // Boolean false attribute values
-  assert.deepEqual(html`
+  assert.deepStrictEqual(html`
     <x a=${ false } />
   `, {
     tag: 'x',
@@ -97,7 +97,7 @@ const html = createTag(new TreeBuilder());
 }
 
 { // Null attribute keys
-  assert.deepEqual(html`
+  assert.deepStrictEqual(html`
     <x ${ null } a=1 />
   `, {
     tag: 'x',
@@ -107,7 +107,7 @@ const html = createTag(new TreeBuilder());
 }
 
 { // Escapes
-  assert.deepEqual(html`<x>&lt;tag&gt;&amp;&#x0040;&#64;</x>`, {
+  assert.deepStrictEqual(html`<x>&lt;tag&gt;&amp;&#x0040;&#64;</x>`, {
     tag: 'x',
     attributes: {},
     children: ['<tag>&@@'],
@@ -115,7 +115,7 @@ const html = createTag(new TreeBuilder());
 }
 
 { // createFragment
-  assert.deepEqual(html`
+  assert.deepStrictEqual(html`
     <li>One</li>
     <li>Two</li>
     <li>Three</li>
@@ -133,11 +133,11 @@ const html = createTag(new TreeBuilder());
 }
 
 { // Null tags
-  assert.deepEqual(html`<${ null } />`, { tag: null, attributes: {}, children: [] });
+  assert.deepStrictEqual(html`<${ null } />`, { tag: null, attributes: {}, children: [] });
 }
 
 { // Missing closing tags
-  assert.deepEqual(html`<div><div>`, {
+  assert.deepStrictEqual(html`<div><div>`, {
     tag: 'div',
     attributes: {},
     children: [{
@@ -149,7 +149,7 @@ const html = createTag(new TreeBuilder());
 }
 
 { // Attributes in closing tags
-  assert.deepEqual(html`
+  assert.deepStrictEqual(html`
     <div>
       <div></div a=1>
     </div>
@@ -169,7 +169,7 @@ const html = createTag(new TreeBuilder());
 }
 
 { // Flag attributes
-  assert.deepEqual(html`<div a />`, {
+  assert.deepStrictEqual(html`<div a />`, {
     tag: 'div',
     attributes: { a: true },
     children: [],
@@ -177,7 +177,7 @@ const html = createTag(new TreeBuilder());
 }
 
 { // Comments
-  assert.deepEqual(html`<div><!-- ${ 1 } ${ 2 } -->${ 3 }</div>`, {
+  assert.deepStrictEqual(html`<div><!-- ${ 1 } ${ 2 } -->${ 3 }</div>`, {
     tag: 'div',
     attributes: {},
     children: [
