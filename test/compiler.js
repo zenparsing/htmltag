@@ -190,3 +190,11 @@ const html = createTag(new TreeBuilder());
     ],
   });
 }
+
+{
+  assert.deepStrictEqual(html`${'text'}`, {
+    tag: '#document-fragment',
+    attributes: {},
+    children: ['text'],
+  });
+}

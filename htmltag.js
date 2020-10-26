@@ -34,11 +34,7 @@ const ESC_RE = /&(?:(lt|gt|amp|quot)|#([0-9]+)|#x([0-9a-f]+));?/ig;
 const NAMED_REFS = { lt: '<', gt: '>', amp: '&', quot: '"' };
 
 function wsToken(t) {
-  return (
-    t.type === T_TEXT &&
-    typeof t.value === 'string' &&
-    (!t.value || !t.value.trim())
-  );
+  return t.type === T_TEXT && !t.mutable && (!t.value || !t.value.trim());
 }
 
 function rmatch(s, end, t) {
@@ -289,7 +285,7 @@ export class Parser {
         break;
     }
 
-    if (type) {
+    if (type !== T_NONE) {
       let token = new Token(type, value);
       token.mutable = true;
       this.tokens.push(token);
