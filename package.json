@@ -17,7 +17,7 @@
   ],
   "homepage": "https://github.com/zenparsing/htmltag",
   "devDependencies": {
-    "eslint": "^8.34.0"
+    "eslint": "^8.46.0"
   },
   "scripts": {
     "test": "eslint *.js test/*.js && node test"
