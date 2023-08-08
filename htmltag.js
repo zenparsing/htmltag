@@ -68,16 +68,19 @@ function escape(value) {
     : String.fromCharCode(parseInt(dec || hex, hex ? 16 : 10)));
 }
 
-class Token {
-  constructor(type, value, hasEscape) {
+export class Token {
+  constructor(type, value, mutable) {
     this.type = type;
-    this.value = hasEscape ? escape(value) : value;
-    this.mutable = false;
+    this.value = value;
+    this.mutable = mutable;
   }
 }
 
-export class Parser {
+function createToken(type, value, hasEscape) {
+  return new Token(type, hasEscape ? escape(value) : value, false);
+}
 
+export class Parser {
   constructor() {
     this.tokens = [];
     this.state = S_TEXT;
@@ -102,7 +105,7 @@ export class Parser {
       } else if (state === S_COMMENT) {
         if (c === '>' && rmatch(chunk, b, '--')) {
           if (b - 2 > a) {
-            tokens.push(new Token(T_COMMENT, chunk.slice(a, b - 2), false));
+            tokens.push(createToken(T_COMMENT, chunk.slice(a, b - 2), false));
           }
           state = S_TEXT;
           hasEscape = false;
@@ -113,7 +116,7 @@ export class Parser {
       } else if (state === S_TEXT) {
         if (c === '<') {
           if (b > a) {
-            tokens.push(new Token(T_TEXT, chunk.slice(a, b), hasEscape));
+            tokens.push(createToken(T_TEXT, chunk.slice(a, b), hasEscape));
           }
           state = S_OPEN;
           hasEscape = false;
@@ -122,7 +125,7 @@ export class Parser {
       } else if (state === S_ATTR_VALUE_SQ) {
         if (c === "'") {
           let type = attrPart ? T_ATTR_PART : T_ATTR_VALUE;
-          tokens.push(new Token(type, chunk.slice(a, b), hasEscape));
+          tokens.push(createToken(type, chunk.slice(a, b), hasEscape));
           state = S_ATTR;
           hasEscape = false;
           attrPart = false;
@@ -131,7 +134,7 @@ export class Parser {
       } else if (state === S_ATTR_VALUE_DQ) {
         if (c === '"') {
           let type = attrPart ? T_ATTR_PART : T_ATTR_VALUE;
-          tokens.push(new Token(type, chunk.slice(a, b), hasEscape));
+          tokens.push(createToken(type, chunk.slice(a, b), hasEscape));
           state = S_ATTR;
           hasEscape = false;
           attrPart = false;
@@ -140,26 +143,26 @@ export class Parser {
       } else if (c === '>') {
         if (state === S_OPEN) {
           let value = chunk.slice(a, b);
-          tokens.push(new Token(T_TAG_START, value, hasEscape));
+          tokens.push(createToken(T_TAG_START, value, hasEscape));
           hasEscape = false;
           a = b;
           this.tag = value;
         } else if (state === S_ATTR_KEY) {
-          tokens.push(new Token(T_ATTR_KEY, chunk.slice(a, b), hasEscape));
+          tokens.push(createToken(T_ATTR_KEY, chunk.slice(a, b), hasEscape));
           hasEscape = false;
           a = b;
         } else if (state === S_ATTR_VALUE) {
-          tokens.push(new Token(T_ATTR_VALUE, chunk.slice(a, b), hasEscape));
+          tokens.push(createToken(T_ATTR_VALUE, chunk.slice(a, b), hasEscape));
           hasEscape = false;
           a = b;
         }
         if (rmatch(chunk, b, '/') && this.tag[0] !== '/') {
-          tokens.push(new Token(T_TAG_END, '/', false));
+          tokens.push(createToken(T_TAG_END, '/', false));
           state = S_TEXT;
           hasEscape = false;
           a = b + 1;
         } else {
-          tokens.push(new Token(T_TAG_END, '', false));
+          tokens.push(createToken(T_TAG_END, '', false));
           hasEscape = false;
           state = rawTag(this.tag) ? S_RAW : S_TEXT;
           a = b + 1;
@@ -172,7 +175,7 @@ export class Parser {
           // Allow leading slash
         } else if (!attrChar(c)) {
           let value = chunk.slice(a, b);
-          tokens.push(new Token(T_TAG_START, value, hasEscape));
+          tokens.push(createToken(T_TAG_START, value, hasEscape));
           this.tag = value;
           hasEscape = false;
           state = S_ATTR;
@@ -185,12 +188,12 @@ export class Parser {
         }
       } else if (state === S_ATTR_KEY) {
         if (c === '=') {
-          tokens.push(new Token(T_ATTR_KEY, chunk.slice(a, b), hasEscape));
+          tokens.push(createToken(T_ATTR_KEY, chunk.slice(a, b), hasEscape));
           hasEscape = false;
           state = S_ATTR_VALUE_WS;
           a = b + 1;
         } else if (!attrChar(c)) {
-          tokens.push(new Token(T_ATTR_KEY, chunk.slice(a, b), hasEscape));
+          tokens.push(createToken(T_ATTR_KEY, chunk.slice(a, b), hasEscape));
           hasEscape = false;
           state = S_ATTR_KEY_WS;
           a = b + 1;
@@ -216,7 +219,7 @@ export class Parser {
         }
       } else if (state === S_ATTR_VALUE) {
         if (!attrChar(c)) {
-          tokens.push(new Token(T_ATTR_VALUE, chunk.slice(a, b), hasEscape));
+          tokens.push(createToken(T_ATTR_VALUE, chunk.slice(a, b), hasEscape));
           hasEscape = false;
           state = S_ATTR;
           a = b + 1;
@@ -226,30 +229,30 @@ export class Parser {
 
     if (state === S_TEXT || state === S_RAW) {
       if (a < b) {
-        tokens.push(new Token(T_TEXT, chunk.slice(a, b), hasEscape));
+        tokens.push(createToken(T_TEXT, chunk.slice(a, b), hasEscape));
       }
     } else if (state === S_COMMENT) {
       if (a < b) {
-        tokens.push(new Token(T_COMMENT, chunk.slice(a, b), hasEscape));
+        tokens.push(createToken(T_COMMENT, chunk.slice(a, b), hasEscape));
       }
     } else if (state === S_OPEN) {
       if (a < b) {
         let value = chunk.slice(a, b);
-        tokens.push(new Token(T_TAG_START, value, hasEscape));
+        tokens.push(createToken(T_TAG_START, value, hasEscape));
         this.tag = value;
         state = S_ATTR;
       }
     } else if (state === S_ATTR_KEY) {
-      tokens.push(new Token(T_ATTR_KEY, chunk.slice(a, b), hasEscape));
+      tokens.push(createToken(T_ATTR_KEY, chunk.slice(a, b), hasEscape));
       state = S_ATTR;
     } else if (state === S_ATTR_KEY_WS) {
       state = S_ATTR;
     } else if (state === S_ATTR_VALUE) {
-      tokens.push(new Token(T_ATTR_VALUE, chunk.slice(a, b), hasEscape));
+      tokens.push(createToken(T_ATTR_VALUE, chunk.slice(a, b), hasEscape));
       state = S_ATTR;
     } else if (state === S_ATTR_VALUE_SQ || state === S_ATTR_VALUE_DQ) {
       if (a < b) {
-        tokens.push(new Token(T_ATTR_PART, chunk.slice(a, b), hasEscape));
+        tokens.push(createToken(T_ATTR_PART, chunk.slice(a, b), hasEscape));
       }
     }
 
@@ -286,9 +289,7 @@ export class Parser {
     }
 
     if (type !== T_NONE) {
-      let token = new Token(type, value);
-      token.mutable = true;
-      this.tokens.push(token);
+      this.tokens.push(new Token(type, value, true));
     }
   }
 
@@ -306,7 +307,6 @@ export class Parser {
 
     return a === 0 && b === tokens.length ? tokens : tokens.slice(a, b);
   }
-
 }
 
 function tokenize(chunks) {
@@ -373,7 +373,6 @@ function walk(i, node, tokens, vals, actions) {
 }
 
 class Vals {
-
   constructor(values, actions) {
     this.index = 0;
     this.values = values;
@@ -385,18 +384,10 @@ class Vals {
       ? this.actions.mapValue(this.values[this.index++])
       : t.value;
   }
-
 }
 
 export class TemplateResult {
-
-  constructor(callsite, values) {
-    let tokens = TemplateResult.cache.get(callsite);
-    if (!tokens) {
-      tokens = tokenize(callsite.raw);
-      tokens.source = {};
-      TemplateResult.cache.set(callsite, tokens);
-    }
+  constructor(tokens, values) {
     this[$tokens] = tokens;
     this.source = tokens.source;
     this.values = values;
@@ -407,7 +398,6 @@ export class TemplateResult {
     walk(0, root, this[$tokens], new Vals(this.values, actions), actions);
     return actions.finishRoot(root);
   }
-
 }
 
 TemplateResult.cache = new WeakMap();
@@ -420,11 +410,17 @@ try {
 }
 
 export function html(callsite, ...values) {
-  return new TemplateResult(callsite, values);
+  let tokens = TemplateResult.cache.get(callsite);
+  if (!tokens) {
+    tokens = tokenize(callsite.raw);
+    tokens.source = {};
+    TemplateResult.cache.set(callsite, tokens);
+  }
+  return new TemplateResult(tokens, values);
 }
 
 export function createTag(actions) {
   return function htmlTag(literals, ...values) {
-    return new TemplateResult(literals, values).evaluate(actions);
+    return html(literals, ...values).evaluate(actions);
   };
 }
