@@ -1,0 +1,1020 @@
+{
+  "Parser - Tags and attributes": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "tag",
+          "attributes": [
+            {
+              "kind": "static",
+              "name": "a",
+              "value": "x"
+            },
+            {
+              "kind": "static",
+              "name": "b",
+              "value": "1"
+            },
+            {
+              "kind": "static",
+              "name": "c",
+              "value": "y"
+            },
+            {
+              "kind": "static",
+              "name": "d",
+              "value": "z"
+            }
+          ],
+          "children": []
+        }
+      ]
+    },
+    "values": []
+  },
+  "Parser - Explicit self-closing": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [],
+          "children": []
+        }
+      ]
+    },
+    "values": []
+  },
+  "Parser - Exclicit self-closing with no space": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [],
+          "children": []
+        }
+      ]
+    },
+    "values": []
+  },
+  "Parser - Comment": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": []
+    },
+    "values": []
+  },
+  "Parser - Comment with slot": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "null-slot",
+          "tag": "",
+          "attributes": [],
+          "children": []
+        }
+      ]
+    },
+    "values": [
+      ""
+    ]
+  },
+  "Parser - Comment with multiple slots": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "null-slot",
+          "tag": "",
+          "attributes": [],
+          "children": []
+        },
+        {
+          "kind": "null-slot",
+          "tag": "",
+          "attributes": [],
+          "children": []
+        }
+      ]
+    },
+    "values": [
+      "b",
+      ""
+    ]
+  },
+  "Parser - Strange tag name with !--": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "a!--",
+          "attributes": [],
+          "children": []
+        }
+      ]
+    },
+    "values": []
+  },
+  "Parser - Attribute key WS before />": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [
+            {
+              "kind": "static",
+              "name": "a",
+              "value": true
+            }
+          ],
+          "children": []
+        }
+      ]
+    },
+    "values": []
+  },
+  "Parser - Raw tag: script": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "script",
+          "attributes": [],
+          "children": [
+            "console.log(\"<tag>\")"
+          ]
+        }
+      ]
+    },
+    "values": []
+  },
+  "Parser - Raw tag with values": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "script",
+          "attributes": [],
+          "children": [
+            "a",
+            {
+              "kind": "child-slot",
+              "tag": "",
+              "attributes": [],
+              "children": []
+            },
+            "c"
+          ]
+        }
+      ]
+    },
+    "values": [
+      "b"
+    ]
+  },
+  "Parser - Raw self-closing": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "script",
+          "attributes": [],
+          "children": []
+        },
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [],
+          "children": []
+        }
+      ]
+    },
+    "values": []
+  },
+  "Parser - Raw tag: style": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "style",
+          "attributes": [],
+          "children": [
+            "a { content: \"<tag>\" }"
+          ]
+        }
+      ]
+    },
+    "values": []
+  },
+  "Parser - Character escapes": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [],
+          "children": [
+            "<tag>&\""
+          ]
+        }
+      ]
+    },
+    "values": []
+  },
+  "Parser - Decimal escapes": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [],
+          "children": [
+            "@"
+          ]
+        }
+      ]
+    },
+    "values": []
+  },
+  "Parser - Hex escapes": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [],
+          "children": [
+            "@"
+          ]
+        }
+      ]
+    },
+    "values": []
+  },
+  "Parser - Unicode escapes": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [],
+          "children": [
+            "@ < &"
+          ]
+        }
+      ]
+    },
+    "values": []
+  },
+  "Parser - Missing semicolon in escape": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [],
+          "children": [
+            "@"
+          ]
+        }
+      ]
+    },
+    "values": []
+  },
+  "Parser - Unknown named reference": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        "&foobar;"
+      ]
+    },
+    "values": []
+  },
+  "Parser - No escapes in raw": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "script",
+          "attributes": [],
+          "children": [
+            "&#x0040"
+          ]
+        }
+      ]
+    },
+    "values": []
+  },
+  "Parser - Strange 1": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "a",
+          "attributes": [
+            {
+              "kind": "static",
+              "name": "b",
+              "value": true
+            }
+          ],
+          "children": []
+        }
+      ]
+    },
+    "values": []
+  },
+  "Parser - Strange 2": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [
+            {
+              "kind": "static",
+              "name": "y",
+              "value": "1"
+            }
+          ],
+          "children": []
+        }
+      ]
+    },
+    "values": []
+  },
+  "Parser - Missing closing tag name": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [],
+          "children": [
+            "a"
+          ]
+        }
+      ]
+    },
+    "values": []
+  },
+  "Parser - Attribute parts DQ": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [
+            {
+              "kind": "parts",
+              "name": "y",
+              "value": [
+                "a",
+                "c",
+                "e"
+              ]
+            }
+          ],
+          "children": []
+        }
+      ]
+    },
+    "values": [
+      "b",
+      "d"
+    ]
+  },
+  "Parser - Attribute parts SQ": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [
+            {
+              "kind": "parts",
+              "name": "y",
+              "value": [
+                "a",
+                "c",
+                "e"
+              ]
+            }
+          ],
+          "children": []
+        }
+      ]
+    },
+    "values": [
+      "b",
+      "d"
+    ]
+  },
+  "Parser - Attribute parts must be quoted": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [
+            {
+              "kind": "static",
+              "name": "y",
+              "value": "a"
+            },
+            {
+              "kind": "map",
+              "name": "",
+              "value": ""
+            },
+            {
+              "kind": "static",
+              "name": "c",
+              "value": true
+            }
+          ],
+          "children": []
+        }
+      ]
+    },
+    "values": [
+      "b"
+    ]
+  },
+  "Parser - Attribute maps": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [
+            {
+              "kind": "map",
+              "name": "",
+              "value": ""
+            }
+          ],
+          "children": []
+        }
+      ]
+    },
+    "values": [
+      "map"
+    ]
+  },
+  "Parser - Strange self-closing bug": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        "\n    ",
+        {
+          "kind": "element",
+          "tag": "path",
+          "attributes": [],
+          "children": []
+        },
+        "\n    ",
+        {
+          "kind": "element",
+          "tag": "path",
+          "attributes": [
+            {
+              "kind": "static",
+              "name": "id",
+              "value": "r2"
+            }
+          ],
+          "children": [
+            "\n      ",
+            {
+              "kind": "element",
+              "tag": "animate",
+              "attributes": [],
+              "children": []
+            },
+            "\n    "
+          ]
+        },
+        "\n  "
+      ]
+    },
+    "values": []
+  },
+  "Compiler - Attributes": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        "\n    ",
+        {
+          "kind": "element",
+          "tag": "div",
+          "attributes": [
+            {
+              "kind": "static",
+              "name": "a",
+              "value": "1"
+            },
+            {
+              "kind": "static",
+              "name": "b",
+              "value": "2"
+            },
+            {
+              "kind": "value",
+              "name": "c",
+              "value": ""
+            },
+            {
+              "kind": "parts",
+              "name": "d",
+              "value": [
+                "4",
+                "4"
+              ]
+            },
+            {
+              "kind": "map",
+              "name": "",
+              "value": ""
+            }
+          ],
+          "children": []
+        },
+        "\n  "
+      ]
+    },
+    "values": [
+      3,
+      4,
+      {
+        "e": 5,
+        "f": 6,
+        "a": 7
+      }
+    ]
+  },
+  "Compiler - Tag name position": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        "\n    ",
+        {
+          "kind": "element",
+          "tag": "",
+          "attributes": [
+            {
+              "kind": "map",
+              "name": "",
+              "value": ""
+            },
+            {
+              "kind": "static",
+              "name": "id",
+              "value": "c"
+            },
+            {
+              "kind": "null",
+              "name": "",
+              "value": ""
+            }
+          ],
+          "children": [
+            "\n      ",
+            {
+              "kind": "element",
+              "tag": "div",
+              "attributes": [],
+              "children": []
+            },
+            "\n    "
+          ]
+        },
+        "\n  "
+      ]
+    },
+    "values": [
+      "",
+      ""
+    ]
+  },
+  "Compiler - Closing tag doesn't require a name": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        "\n    ",
+        {
+          "kind": "element",
+          "tag": "div",
+          "attributes": [],
+          "children": [
+            "\n      ",
+            {
+              "kind": "element",
+              "tag": "",
+              "attributes": [
+                {
+                  "kind": "map",
+                  "name": "",
+                  "value": ""
+                }
+              ],
+              "children": [
+                "\n        ",
+                {
+                  "kind": "element",
+                  "tag": "span",
+                  "attributes": [],
+                  "children": []
+                },
+                "\n      "
+              ]
+            },
+            "\n      ",
+            {
+              "kind": "element",
+              "tag": "span",
+              "attributes": [],
+              "children": []
+            },
+            "\n    "
+          ]
+        },
+        "\n  "
+      ]
+    },
+    "values": [
+      "dynamic"
+    ]
+  },
+  "Compiler - Explicit self-closing tags": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "div",
+          "attributes": [],
+          "children": [
+            {
+              "kind": "element",
+              "tag": "a",
+              "attributes": [],
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "values": []
+  },
+  "Compiler - Flag attributes": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "div",
+          "attributes": [
+            {
+              "kind": "static",
+              "name": "a",
+              "value": true
+            }
+          ],
+          "children": []
+        }
+      ]
+    },
+    "values": []
+  },
+  "Compiler - Boolean false attribute values": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [
+            {
+              "kind": "value",
+              "name": "a",
+              "value": ""
+            }
+          ],
+          "children": []
+        }
+      ]
+    },
+    "values": [
+      false
+    ]
+  },
+  "Compiler - Null attribute keys": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [
+            {
+              "kind": "map",
+              "name": "",
+              "value": ""
+            },
+            {
+              "kind": "static",
+              "name": "a",
+              "value": "1"
+            }
+          ],
+          "children": []
+        }
+      ]
+    },
+    "values": [
+      null
+    ]
+  },
+  "Compiler - Escapes": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "x",
+          "attributes": [],
+          "children": [
+            "<tag>&@@"
+          ]
+        }
+      ]
+    },
+    "values": []
+  },
+  "Compiler - createFragment": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        "\n    ",
+        {
+          "kind": "element",
+          "tag": "li",
+          "attributes": [],
+          "children": [
+            "One"
+          ]
+        },
+        "\n    ",
+        {
+          "kind": "element",
+          "tag": "li",
+          "attributes": [],
+          "children": [
+            "Two"
+          ]
+        },
+        "\n    ",
+        {
+          "kind": "element",
+          "tag": "li",
+          "attributes": [],
+          "children": [
+            "Three"
+          ]
+        },
+        "\n  "
+      ]
+    },
+    "values": []
+  },
+  "Compiler - Null tags": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "",
+          "attributes": [
+            {
+              "kind": "map",
+              "name": "",
+              "value": ""
+            }
+          ],
+          "children": []
+        }
+      ]
+    },
+    "values": [
+      null
+    ]
+  },
+  "Compiler - Missing closing tags": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "div",
+          "attributes": [],
+          "children": [
+            {
+              "kind": "element",
+              "tag": "div",
+              "attributes": [],
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "values": []
+  },
+  "Compiler - Attributes in closing tags": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        "\n    ",
+        {
+          "kind": "element",
+          "tag": "div",
+          "attributes": [],
+          "children": [
+            "\n      ",
+            {
+              "kind": "element",
+              "tag": "div",
+              "attributes": [],
+              "children": []
+            },
+            "\n    "
+          ]
+        },
+        "\n  "
+      ]
+    },
+    "values": []
+  },
+  "Compiler - Comments": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "element",
+          "tag": "div",
+          "attributes": [],
+          "children": [
+            {
+              "kind": "null-slot",
+              "tag": "",
+              "attributes": [],
+              "children": []
+            },
+            {
+              "kind": "null-slot",
+              "tag": "",
+              "attributes": [],
+              "children": []
+            },
+            {
+              "kind": "child-slot",
+              "tag": "",
+              "attributes": [],
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "values": [
+      1,
+      2,
+      3
+    ]
+  },
+  "Compiler - Lone child": {
+    "template": {
+      "kind": "root",
+      "tag": "",
+      "attributes": [],
+      "children": [
+        {
+          "kind": "child-slot",
+          "tag": "",
+          "attributes": [],
+          "children": []
+        }
+      ]
+    },
+    "values": [
+      "text"
+    ]
+  }
+}

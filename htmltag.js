@@ -2,23 +2,12 @@ function makeEnum(i = 0) {
   return new Proxy({}, { get() { return i++; } });
 }
 
-export const {
-  T_NONE,
-  T_COMMENT,
-  T_TEXT,
-  T_ATTR_PART,
-  T_ATTR_MAP,
-  T_ATTR_VALUE,
-  T_TAG_START,
-  T_ATTR_KEY,
-  T_TAG_END,
-} = makeEnum();
-
 const {
   S_TEXT,
   S_RAW,
   S_OPEN,
   S_ATTR,
+  S_ATTR_CLOSE,
   S_ATTR_KEY,
   S_ATTR_KEY_WS,
   S_ATTR_VALUE_WS,
@@ -28,13 +17,12 @@ const {
   S_COMMENT,
 } = makeEnum();
 
-const $tokens = Symbol('tokens');
-
 const ESC_RE = /&(?:(lt|gt|amp|quot)|#([0-9]+)|#x([0-9a-f]+));?/ig;
+
 const NAMED_REFS = { lt: '<', gt: '>', amp: '&', quot: '"' };
 
-function wsToken(t) {
-  return t.type === T_TEXT && !t.mutable && (!t.value || !t.value.trim());
+function notReached(msg) {
+  throw new Error(msg);
 }
 
 function rmatch(s, end, t) {
@@ -68,29 +56,51 @@ function escape(value) {
     : String.fromCharCode(parseInt(dec || hex, hex ? 16 : 10)));
 }
 
-export class Token {
-  constructor(type, value, mutable) {
-    this.type = type;
-    this.value = value;
-    this.mutable = mutable;
+function maybeEscape(hasEscape, text) {
+  return hasEscape ? escape(text) : text;
+}
+
+class ParseNode {
+  constructor(kind) {
+    this.kind = kind;
+    this.tag = '';
+    this.attributes = [];
+    this.children = [];
   }
 }
 
-function createToken(type, value, hasEscape) {
-  return new Token(type, hasEscape ? escape(value) : value, false);
+class Attribute {
+  constructor(kind, name, value) {
+    this.kind = kind;
+    this.name = name;
+    this.value = value;
+  }
 }
 
 export class Parser {
   constructor() {
-    this.tokens = [];
+    this.node = new ParseNode('root');
+    this.stack = [this.node];
     this.state = S_TEXT;
+    this.attrName = '';
+    this.attrParts = [];
     this.tag = '';
+    this.closing = false;
+  }
+
+  addAttr(value) {
+    this.node.attributes.push(new Attribute('static', this.attrName, value));
+  }
+
+  addAttrParts() {
+    let attr = new Attribute('parts', this.attrName, this.attrParts);
+    this.node.attributes.push(attr);
+    this.attrParts = [];
   }
 
   parseChunk(chunk) {
     let state = this.state;
-    let tokens = this.tokens;
-    let attrPart = (state === S_ATTR_VALUE_DQ || state === S_ATTR_VALUE_SQ);
+    let attrPart = state === S_ATTR_VALUE_DQ || state === S_ATTR_VALUE_SQ;
     let hasEscape = false;
     let a = 0;
     let b = 0;
@@ -104,9 +114,7 @@ export class Parser {
         }
       } else if (state === S_COMMENT) {
         if (c === '>' && rmatch(chunk, b, '--')) {
-          if (b - 2 > a) {
-            tokens.push(createToken(T_COMMENT, chunk.slice(a, b - 2), false));
-          }
+          // Comments are ignored
           state = S_TEXT;
           hasEscape = false;
           a = b + 1;
@@ -116,71 +124,88 @@ export class Parser {
       } else if (state === S_TEXT) {
         if (c === '<') {
           if (b > a) {
-            tokens.push(createToken(T_TEXT, chunk.slice(a, b), hasEscape));
+            let text = maybeEscape(hasEscape, chunk.slice(a, b));
+            this.node.children.push(text);
           }
           state = S_OPEN;
           hasEscape = false;
+          this.closing = false;
           a = b + 1;
         }
       } else if (state === S_ATTR_VALUE_SQ) {
         if (c === "'") {
-          let type = attrPart ? T_ATTR_PART : T_ATTR_VALUE;
-          tokens.push(createToken(type, chunk.slice(a, b), hasEscape));
+          let value = maybeEscape(hasEscape, chunk.slice(a, b));
+          if (attrPart) {
+            this.attrParts.push(value);
+            this.addAttrParts();
+            attrPart = false;
+          } else {
+            this.addAttr(value);
+          }
           state = S_ATTR;
           hasEscape = false;
-          attrPart = false;
+          this.attrName = '';
           a = b + 1;
         }
       } else if (state === S_ATTR_VALUE_DQ) {
         if (c === '"') {
-          let type = attrPart ? T_ATTR_PART : T_ATTR_VALUE;
-          tokens.push(createToken(type, chunk.slice(a, b), hasEscape));
+          let value = maybeEscape(hasEscape, chunk.slice(a, b));
+          if (attrPart) {
+            this.attrParts.push(value);
+            this.addAttrParts();
+            attrPart = false;
+          } else {
+            this.addAttr(value);
+          }
           state = S_ATTR;
           hasEscape = false;
-          attrPart = false;
+          this.attrName = '';
           a = b + 1;
         }
       } else if (c === '>') {
         if (state === S_OPEN) {
-          let value = chunk.slice(a, b);
-          tokens.push(createToken(T_TAG_START, value, hasEscape));
-          hasEscape = false;
-          a = b;
-          this.tag = value;
+          this.tag = maybeEscape(hasEscape, chunk.slice(a, b));
+          if (!this.closing) {
+            this.pushNode();
+          }
         } else if (state === S_ATTR_KEY) {
-          tokens.push(createToken(T_ATTR_KEY, chunk.slice(a, b), hasEscape));
-          hasEscape = false;
-          a = b;
+          this.attrName = maybeEscape(hasEscape, chunk.slice(a, b));
+          this.addAttr(true);
+        } else if (state === S_ATTR_KEY_WS) {
+          this.addAttr(true);
         } else if (state === S_ATTR_VALUE) {
-          tokens.push(createToken(T_ATTR_VALUE, chunk.slice(a, b), hasEscape));
-          hasEscape = false;
-          a = b;
+          this.addAttr(maybeEscape(hasEscape, chunk.slice(a, b)));
+        } else if (state === S_ATTR_VALUE_WS) {
+          this.addAttr(true);
         }
-        if (rmatch(chunk, b, '/') && this.tag[0] !== '/') {
-          tokens.push(createToken(T_TAG_END, '/', false));
+        if (this.closing || rmatch(chunk, b, '/')) {
+          // Closing or self-closing tag
+          this.popNode();
           state = S_TEXT;
-          hasEscape = false;
-          a = b + 1;
         } else {
-          tokens.push(createToken(T_TAG_END, '', false));
-          hasEscape = false;
           state = rawTag(this.tag) ? S_RAW : S_TEXT;
-          a = b + 1;
         }
+        hasEscape = false;
+        a = b + 1;
       } else if (state === S_OPEN) {
         if (c === '-' && chunk.slice(a, b) === '!-') {
           state = S_COMMENT;
           a = b + 1;
         } else if (c === '/' && b === a) {
-          // Allow leading slash
+          this.closing = true;
         } else if (!attrChar(c)) {
-          let value = chunk.slice(a, b);
-          tokens.push(createToken(T_TAG_START, value, hasEscape));
-          this.tag = value;
+          this.tag = maybeEscape(hasEscape, chunk.slice(a, b));
+          if (this.closing) {
+            state = S_ATTR_CLOSE;
+          } else {
+            this.pushNode();
+            state = S_ATTR;
+          }
           hasEscape = false;
-          state = S_ATTR;
           a = b + 1;
         }
+      } else if (state === S_ATTR_CLOSE) {
+        // Ignore attributes in closing tags
       } else if (state === S_ATTR) {
         if (attrChar(c)) {
           state = S_ATTR_KEY;
@@ -188,12 +213,12 @@ export class Parser {
         }
       } else if (state === S_ATTR_KEY) {
         if (c === '=') {
-          tokens.push(createToken(T_ATTR_KEY, chunk.slice(a, b), hasEscape));
+          this.attrName = maybeEscape(hasEscape, chunk.slice(a, b));
           hasEscape = false;
           state = S_ATTR_VALUE_WS;
           a = b + 1;
         } else if (!attrChar(c)) {
-          tokens.push(createToken(T_ATTR_KEY, chunk.slice(a, b), hasEscape));
+          this.attrName = maybeEscape(hasEscape, chunk.slice(a, b));
           hasEscape = false;
           state = S_ATTR_KEY_WS;
           a = b + 1;
@@ -203,6 +228,7 @@ export class Parser {
           state = S_ATTR_VALUE_WS;
           a = b + 1;
         } else if (attrChar(c)) {
+          this.addAttr(true);
           state = S_ATTR_KEY;
           a = b;
         }
@@ -219,7 +245,7 @@ export class Parser {
         }
       } else if (state === S_ATTR_VALUE) {
         if (!attrChar(c)) {
-          tokens.push(createToken(T_ATTR_VALUE, chunk.slice(a, b), hasEscape));
+          this.addAttr(maybeEscape(hasEscape, chunk.slice(a, b)));
           hasEscape = false;
           state = S_ATTR;
           a = b + 1;
@@ -229,191 +255,112 @@ export class Parser {
 
     if (state === S_TEXT || state === S_RAW) {
       if (a < b) {
-        tokens.push(createToken(T_TEXT, chunk.slice(a, b), hasEscape));
+        let text = maybeEscape(hasEscape, chunk.slice(a, b));
+        this.node.children.push(text);
       }
     } else if (state === S_COMMENT) {
-      if (a < b) {
-        tokens.push(createToken(T_COMMENT, chunk.slice(a, b), hasEscape));
-      }
+      // Comments are ignored
     } else if (state === S_OPEN) {
-      if (a < b) {
-        let value = chunk.slice(a, b);
-        tokens.push(createToken(T_TAG_START, value, hasEscape));
-        this.tag = value;
+      this.tag = maybeEscape(hasEscape, chunk.slice(a, b));
+      if (this.closing) {
+        state = S_ATTR_CLOSE;
+      } else {
+        this.pushNode();
         state = S_ATTR;
       }
     } else if (state === S_ATTR_KEY) {
-      tokens.push(createToken(T_ATTR_KEY, chunk.slice(a, b), hasEscape));
+      this.attrName = maybeEscape(hasEscape, chunk.slice(a, b));
       state = S_ATTR;
     } else if (state === S_ATTR_KEY_WS) {
       state = S_ATTR;
     } else if (state === S_ATTR_VALUE) {
-      tokens.push(createToken(T_ATTR_VALUE, chunk.slice(a, b), hasEscape));
+      this.addAttr(maybeEscape(hasEscape, chunk.slice(a, b)));
       state = S_ATTR;
     } else if (state === S_ATTR_VALUE_SQ || state === S_ATTR_VALUE_DQ) {
-      if (a < b) {
-        tokens.push(createToken(T_ATTR_PART, chunk.slice(a, b), hasEscape));
-      }
+      let value = maybeEscape(hasEscape, chunk.slice(a, b));
+      this.attrParts.push(value);
     }
 
     this.state = state;
   }
 
-  pushValue(value) {
-    let type = T_NONE;
+  pushNode() {
+    let node = new ParseNode('element');
+    node.tag = this.tag;
+    this.node.children.push(node);
+    this.node = node;
+    this.stack.push(node);
+  }
 
+  popNode() {
+    if (this.stack.length > 1) {
+      this.stack.pop();
+      this.node = this.stack[this.stack.length - 1];
+    }
+  }
+
+  addSlot() {
     switch (this.state) {
       case S_TEXT:
       case S_RAW:
-        type = T_TEXT;
+        this.node.children.push(new ParseNode('child-slot'));
         break;
       case S_COMMENT:
-        type = T_COMMENT;
-        break;
-      case S_OPEN:
-        type = T_TAG_START;
-        this.tag = value;
-        this.state = S_ATTR;
+        this.node.children.push(new ParseNode('null-slot'));
         break;
       case S_ATTR:
-        type = T_ATTR_MAP;
+        this.node.attributes.push(new Attribute('map', '', ''));
+        break;
+      case S_ATTR_CLOSE:
+        this.node.attributes.push(new Attribute('null', '', ''));
         break;
       case S_ATTR_VALUE_WS:
-        type = T_ATTR_VALUE;
+        this.node.attributes.push(new Attribute('value', this.attrName, ''));
         this.state = S_ATTR;
         break;
       case S_ATTR_VALUE_SQ:
       case S_ATTR_VALUE_DQ:
-        type = T_ATTR_PART;
+        // Slots will be added when the next chunk is parsed
         break;
-    }
-
-    if (type !== T_NONE) {
-      this.tokens.push(new Token(type, value, true));
+      default:
+        notReached('Unexpected parser state');
+        break;
     }
   }
 
   end() {
-    let tokens = this.tokens;
-    let a = 0;
-    let b = tokens.length;
-
-    if (b === 0) {
-      return tokens;
-    }
-
-    if (wsToken(tokens[0])) { a++; }
-    if (wsToken(tokens[b - 1])) { b--; }
-
-    return a === 0 && b === tokens.length ? tokens : tokens.slice(a, b);
+    if (this.attrParts.length > 0) { this.addAttrParts(); }
+    while (this.stack.length > 1) { this.popNode(); }
+    return this.node;
   }
 }
 
-function tokenize(chunks) {
-  if (chunks.length === 0) {
-    return [];
-  }
+function parse(chunks) {
   let parser = new Parser();
-  parser.parseChunk(chunks[0]);
-  for (let i = 1; i < chunks.length; i++) {
-    parser.pushValue('');
-    parser.parseChunk(chunks[i]);
+  if (chunks.length > 0) {
+    parser.parseChunk(chunks[0]);
+    for (let i = 1; i < chunks.length; i++) {
+      parser.addSlot();
+      parser.parseChunk(chunks[i]);
+    }
   }
   return parser.end();
 }
 
-function walk(i, node, tokens, vals, actions) {
-  for (; i < tokens.length; ++i) {
-    let t = tokens[i];
-    switch (t.type) {
-      case T_TAG_START: {
-        let tag = vals.read(t);
-        if (typeof tag === 'string' && tag[0] === '/') { // Closing tag
-          while (i < tokens.length && tokens[++i].type !== T_TAG_END); // Skip attributes
-          return i;
-        }
-        let child = actions.createElement(tag, node);
-        i = walk(i + 1, child, tokens, vals, actions);
-        actions.appendChild(node, actions.finishElement(child));
-        break;
-      }
-      case T_TAG_END:
-        if (t.value === '/') { return i; }
-        break;
-      case T_TEXT:
-        actions.appendChild(node, vals.read(t));
-        break;
-      case T_COMMENT:
-        actions.appendChild(node, actions.createComment(vals.read(t), node));
-        break;
-      case T_ATTR_MAP:
-        actions.setAttributes(node, vals.read(t));
-        break;
-      case T_ATTR_KEY: {
-        let name = vals.read(t);
-        switch (i + 1 < tokens.length ? tokens[i + 1].type : T_NONE) {
-          case T_ATTR_VALUE:
-            actions.setAttribute(node, name, vals.read(tokens[++i]));
-            break;
-          case T_ATTR_PART: {
-            let parts = [vals.read(tokens[++i])];
-            while (i + 1 < tokens.length && tokens[i + 1].type === T_ATTR_PART) {
-              parts.push(vals.read(tokens[++i]));
-            }
-            actions.setAttributeParts(node, name, parts);
-            break;
-          }
-          default:
-            actions.setAttribute(node, name, true);
-            break;
-        }
-      }
-    }
-  }
-}
-
-class Vals {
-  constructor(values, actions) {
-    this.index = 0;
-    this.values = values;
-    this.actions = actions;
-  }
-
-  read(t) {
-    return t.mutable
-      ? this.actions.mapValue(this.values[this.index++])
-      : t.value;
-  }
-}
-
 export class TemplateResult {
-  constructor(tokens, values) {
-    this[$tokens] = tokens;
-    this.source = tokens.source;
+  constructor(template, values) {
+    this.template = template;
     this.values = values;
-  }
-
-  evaluate(actions) {
-    let root = actions.createRoot();
-    walk(0, root, this[$tokens], new Vals(this.values, actions), actions);
-    return actions.finishRoot(root);
   }
 }
 
 TemplateResult.cache = new WeakMap();
 
 export function html(callsite, ...values) {
-  let tokens = TemplateResult.cache.get(callsite);
-  if (!tokens) {
-    tokens = tokenize(callsite.raw);
-    tokens.source = {};
-    TemplateResult.cache.set(callsite, tokens);
+  let template = TemplateResult.cache.get(callsite);
+  if (!template) {
+    template = parse(callsite.raw);
+    TemplateResult.cache.set(callsite, template);
   }
-  return new TemplateResult(tokens, values);
-}
-
-export function createTag(actions) {
-  return function htmlTag(literals, ...values) {
-    return html(literals, ...values).evaluate(actions);
-  };
+  return new TemplateResult(template, values);
 }

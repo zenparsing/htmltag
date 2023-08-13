@@ -2,7 +2,7 @@
   "extends": ["eslint:recommended"],
 
   "parserOptions": {
-    "ecmaVersion": 10,
+    "ecmaVersion": 12,
     "sourceType": "module"
   },
 
@@ -39,6 +39,6 @@
     "semi": ["error", "always"],
     "object-curly-spacing": ["error", "always"],
     "array-bracket-spacing": ["error"],
-    "max-len": ["error", 100]
+    "max-len": ["error", 90]
   }
 }
