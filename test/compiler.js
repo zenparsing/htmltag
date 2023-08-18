@@ -1,200 +1,57 @@
-import * as assert from 'assert';
-import { createTag } from '../htmltag.js';
-import { TreeBuilder } from '../extras.js';
+import { html } from '../htmltag.js';
+import { test, group } from './test.js';
 
-const html = createTag(new TreeBuilder());
+group('Compiler', () => {
 
-{ // Attributes
-  assert.deepStrictEqual(html`
+  test('Attributes', html`
     <div a=1 b='2' c=${ 3 } d='4${ 4 }4' ${{ e: 5, f: 6, a: 7 }}></div>
-  `, {
-    tag: 'div',
-    attributes: { a: 7, b: '2', c: 3, d: '444', e: 5, f: 6 },
-    children: [],
-  });
-}
+  `);
 
-{ // Dynamic tag names
-  let custom = 'dynamic-type';
-  assert.deepStrictEqual(html`
-    <${ custom } id='c'>
+  test('Tag name position', html`
+    <${''} id='c'>
       <div></div>
-    </${ custom }>
-  `, {
-    tag: 'dynamic-type',
-    attributes: { id: 'c' },
-    children: [
-      '\n      ',
-      { tag: 'div', attributes: {}, children: [] },
-      '\n    ',
-    ],
-  });
-}
+    </${''}>
+  `);
 
-{ // Closing tag doesn't require a name
-  assert.deepStrictEqual(html`
+  test('Closing tag doesn\'t require a name', html`
     <div>
       <${'dynamic'}>
         <span></span>
       </>
       <span></span>
     </div>
-  `, {
-    tag: 'div',
-    attributes: {},
-    children: [
-      '\n      ',
-      {
-        tag: 'dynamic',
-        attributes: {},
-        children: [
-          '\n        ',
-          { tag: 'span', attributes: {}, children: [] },
-          '\n      ',
-        ],
-      },
-      '\n      ',
-      { tag: 'span', attributes: {}, children: [] },
-      '\n    ',
-    ],
-  });
-}
+  `);
 
-{ // Explicit self-closing tags
-  assert.deepStrictEqual(html`
-    <div><a /></div>
-  `, {
-    tag: 'div',
-    attributes: {},
-    children: [
-      { tag: 'a', attributes: {}, children: [] },
-    ],
-  });
-}
+  test('Explicit self-closing tags', html`<div><a /></div>`);
 
-{ // Flag attributes
-  assert.deepStrictEqual(html`
-    <x f1 x=1 f2 />
-  `, {
-    tag: 'x',
-    attributes: {
-      f1: true,
-      x: '1',
-      f2: true,
-    },
-    children: [],
-  });
-}
+  test('Flag attributes', html`<x f1 x=1 f2 />`);
 
-{ // Boolean false attribute values
-  assert.deepStrictEqual(html`
-    <x a=${ false } />
-  `, {
-    tag: 'x',
-    attributes: { a: false },
-    children: [],
-  });
-}
+  test('Boolean false attribute values', html`<x a=${ false } />`);
 
-{ // Null attribute keys
-  assert.deepStrictEqual(html`
-    <x ${ null } a=1 />
-  `, {
-    tag: 'x',
-    attributes: { a: '1' },
-    children: [],
-  });
-}
+  test('Null attribute keys', html`<x ${ null } a=1 />`);
 
-{ // Escapes
-  assert.deepStrictEqual(html`<x>&lt;tag&gt;&amp;&#x0040;&#64;</x>`, {
-    tag: 'x',
-    attributes: {},
-    children: ['<tag>&@@'],
-  });
-}
+  test('Escapes', html`<x>&lt;tag&gt;&amp;&#x0040;&#64;</x>`);
 
-{ // createFragment
-  assert.deepStrictEqual(html`
+  test('createFragment', html`
     <li>One</li>
     <li>Two</li>
     <li>Three</li>
-  `, {
-    tag: '#document-fragment',
-    attributes: {},
-    children: [
-      { tag: 'li', attributes: {}, children: ['One'] },
-      '\n    ',
-      { tag: 'li', attributes: {}, children: ['Two'] },
-      '\n    ',
-      { tag: 'li', attributes: {}, children: ['Three'] },
-    ],
-  });
-}
+  `);
 
-{ // Null tags
-  assert.deepStrictEqual(html`<${ null } />`, { tag: null, attributes: {}, children: [] });
-}
+  test('Null tags', html`<${ null } />`);
 
-{ // Missing closing tags
-  assert.deepStrictEqual(html`<div><div>`, {
-    tag: 'div',
-    attributes: {},
-    children: [{
-      tag: 'div',
-      attributes: {},
-      children: [],
-    }],
-  });
-}
+  test('Missing closing tags', html`<div><div>`);
 
-{ // Attributes in closing tags
-  assert.deepStrictEqual(html`
+  test('Attributes in closing tags', html`
     <div>
       <div></div a=1>
     </div>
-  `, {
-    tag: 'div',
-    attributes: {},
-    children: [
-      '\n      ',
-      {
-        tag: 'div',
-        attributes: {},
-        children: [],
-      },
-      '\n    ',
-    ],
-  });
-}
+  `);
 
-{ // Flag attributes
-  assert.deepStrictEqual(html`<div a />`, {
-    tag: 'div',
-    attributes: { a: true },
-    children: [],
-  });
-}
+  test('Flag attributes', html`<div a />`);
 
-{ // Comments
-  assert.deepStrictEqual(html`<div><!-- ${ 1 } ${ 2 } -->${ 3 }</div>`, {
-    tag: 'div',
-    attributes: {},
-    children: [
-      { comment: ' ' },
-      { comment: 1 },
-      { comment: ' ' },
-      { comment: 2 },
-      { comment: ' ' },
-      3,
-    ],
-  });
-}
+  test('Comments', html`<div><!-- ${ 1 } ${ 2 } -->${ 3 }</div>`);
 
-{
-  assert.deepStrictEqual(html`${'text'}`, {
-    tag: '#document-fragment',
-    attributes: {},
-    children: ['text'],
-  });
-}
+  test('Lone child', html`${'text'}`);
+
+});
